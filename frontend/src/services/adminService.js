@@ -30,6 +30,15 @@ const adminService = {
     }
   },
 
+  toggleEvent: async (eventId, isActive) => {
+    try {
+      const response = await api.put(`/admin/events/${eventId}/toggle`, { is_active: isActive });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { error: 'Ошибка изменения статуса' };
+    }
+  },
+
   deleteEvent: async (eventId) => {
     try {
       const response = await api.delete(`/admin/events/${eventId}`);
@@ -58,6 +67,15 @@ const adminService = {
     }
   },
 
+  callQueueEntry: async (entryId) => {
+    try {
+      const response = await api.patch(`/admin/queues/${entryId}/call`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { error: 'Ошибка вызова' };
+    }
+  },
+
   completeQueueEntry: async (entryId) => {
     try {
       const response = await api.patch(`/admin/queues/${entryId}/complete`);
@@ -80,7 +98,7 @@ const adminService = {
   getStats: async () => {
     try {
       const response = await api.get('/admin/stats');
-      return response.data.stats;
+      return response.data;
     } catch (error) {
       throw error.response?.data || { error: 'Ошибка получения статистики' };
     }

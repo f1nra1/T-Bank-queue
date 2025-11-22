@@ -3,9 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import adminService from '../services/adminService';
 import authService from '../services/authService';
 import Button from '../components/common/Button';
-import Card from '../components/common/Card';
-import Modal from '../components/common/Modal';
-import { colors, commonStyles } from '../styles/theme';
 
 function AdminPage() {
   const [activeTab, setActiveTab] = useState('stats');
@@ -16,16 +13,10 @@ function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  // Модальные окна
   const [showCreateEventModal, setShowCreateEventModal] = useState(false);
-  const [showUserDetailsModal, setShowUserDetailsModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  
-  // Поиск и фильтры
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   
-  // Форма создания события
   const [eventForm, setEventForm] = useState({
     name: '',
     description: '',
@@ -89,8 +80,7 @@ function AdminPage() {
   };
 
   const handleDeleteUser = async (userId, userName) => {
-    if (!window.confirm(`Удалить пользователя "${userName}"? Это также удалит все его очереди и сообщения.`)) return;
-    
+    if (!window.confirm(`Удалить пользователя "${userName}"?`)) return;
     try {
       await adminService.deleteUser(userId);
       loadData();
@@ -100,8 +90,7 @@ function AdminPage() {
   };
 
   const handleDeleteEvent = async (eventId, eventName) => {
-    if (!window.confirm(`Удалить событие "${eventName}"? Это также удалит все очереди и сообщения этого события.`)) return;
-    
+    if (!window.confirm(`Удалить событие "${eventName}"?`)) return;
     try {
       await adminService.deleteEvent(eventId);
       loadData();
@@ -110,9 +99,17 @@ function AdminPage() {
     }
   };
 
+  const handleToggleEvent = async (eventId, isActive) => {
+    try {
+      await adminService.toggleEvent(eventId, !isActive);
+      loadData();
+    } catch (err) {
+      alert(err.error || 'Ошибка изменения статуса');
+    }
+  };
+
   const handleDeleteQueue = async (entryId, userName) => {
     if (!window.confirm(`Удалить "${userName}" из очереди?`)) return;
-    
     try {
       await adminService.deleteQueueEntry(entryId);
       loadData();
@@ -121,78 +118,82 @@ function AdminPage() {
     }
   };
 
-  const handleCompleteQueue = async (entryId, userName) => {
-    if (!window.confirm(`Завершить обслуживание для "${userName}"?`)) return;
-    
+  const handleCallQueue = async (entryId) => {
+    try {
+      await adminService.callQueueEntry(entryId);
+      loadData();
+    } catch (err) {
+      alert(err.error || 'Ошибка вызова');
+    }
+  };
+
+  const handleCompleteQueue = async (entryId) => {
     try {
       await adminService.completeQueueEntry(entryId);
       loadData();
     } catch (err) {
-      alert(err.error || 'Ошибка');
+      alert(err.error || 'Ошибка завершения');
     }
   };
 
-  const handleSkipQueue = async (entryId, userName) => {
-    if (!window.confirm(`Переместить "${userName}" в конец очереди?`)) return;
-    
-    try {
-      await adminService.skipQueueEntry(entryId);
-      loadData();
-    } catch (err) {
-      alert(err.error || 'Ошибка');
-    }
-  };
-
-  // Фильтрация данных
+  // Фильтрация
   const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredEvents = events.filter(event => {
-    const matchesSearch = event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = event.name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === 'all' ||
-                         (filterStatus === 'active' && event.is_active) ||
-                         (filterStatus === 'inactive' && !event.is_active);
+      (filterStatus === 'active' && event.is_active) ||
+      (filterStatus === 'inactive' && !event.is_active);
     return matchesSearch && matchesFilter;
   });
 
   const filteredQueues = queues.filter(queue => {
-    const matchesSearch = queue.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         queue.event_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = queue.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      queue.event_name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === 'all' || queue.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
 
   return (
     <div style={styles.container}>
-      {/* Header */}
-      <header style={styles.header}>
-        <div>
-          <h1 style={styles.title}>👨‍💼 Админ-панель</h1>
-          <p style={styles.subtitle}>Управление системой очередей</p>
-        </div>
-        <div style={styles.headerActions}>
-          <Link to="/events" style={{ textDecoration: 'none' }}>
-            <Button variant="outline" icon="🎯" size="small">К событиям</Button>
+      {/* Navigation */}
+      <nav style={styles.nav}>
+        <div style={styles.navContent}>
+          <Link to="/" style={styles.logo}>
+            <span style={styles.logoText}>T-Bank Queue</span>
           </Link>
-          <Button
-            variant="error"
-            size="small"
-            onClick={() => {
-              authService.logout();
-              navigate('/');
-            }}
-            icon="🚪"
-          >
-            Выйти
-          </Button>
+          <div style={styles.navLinks}>
+            <Link to="/events" style={styles.navLink}>Мероприятия</Link>
+            {currentUser && (
+              <>
+                <span style={styles.adminBadge}>👨‍💼 Админ</span>
+                <Button
+                  variant="outline"
+                  size="small"
+                  onClick={() => {
+                    authService.logout();
+                    navigate('/');
+                  }}
+                >
+                  Выйти
+                </Button>
+              </>
+            )}
+          </div>
         </div>
-      </header>
+      </nav>
+
+      {/* Header */}
+      <div style={styles.header}>
+        <h1 style={styles.title}>Панель управления</h1>
+        <p style={styles.subtitle}>Управление системой очередей</p>
+      </div>
 
       {/* Tabs */}
-      <div style={styles.tabsContainer}>
+      <div style={styles.tabsWrapper}>
         <div style={styles.tabs}>
           {[
             { id: 'stats', icon: '📊', label: 'Статистика' },
@@ -212,726 +213,586 @@ function AdminPage() {
                 setFilterStatus('all');
               }}
             >
-              <span style={styles.tabIcon}>{tab.icon}</span>
+              <span>{tab.icon}</span>
               <span>{tab.label}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Controls (Search + Filters) */}
+      {/* Controls */}
       {activeTab !== 'stats' && (
         <div style={styles.controls}>
-          <div style={styles.searchBar}>
+          <div style={styles.searchWrapper}>
             <span style={styles.searchIcon}>🔍</span>
             <input
               type="text"
-              placeholder={`Поиск ${
-                activeTab === 'users' ? 'пользователей' :
-                activeTab === 'events' ? 'событий' :
-                'очередей'
-              }...`}
+              placeholder="Поиск..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={styles.searchInput}
             />
-            {searchTerm && (
-              <button
-                style={styles.clearButton}
-                onClick={() => setSearchTerm('')}
-              >
-                ✕
-              </button>
-            )}
           </div>
 
           {(activeTab === 'events' || activeTab === 'queues') && (
-            <div style={styles.filters}>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                style={styles.filterSelect}
-              >
-                <option value="all">Все статусы</option>
-                {activeTab === 'events' ? (
-                  <>
-                    <option value="active">Активные</option>
-                    <option value="inactive">Неактивные</option>
-                  </>
-                ) : (
-                  <>
-                    <option value="waiting">Ожидают</option>
-                    <option value="paused">На паузе</option>
-                    <option value="completed">Завершены</option>
-                  </>
-                )}
-              </select>
-            </div>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              style={styles.filterSelect}
+            >
+              <option value="all">Все</option>
+              {activeTab === 'events' ? (
+                <>
+                  <option value="active">Активные</option>
+                  <option value="inactive">Неактивные</option>
+                </>
+              ) : (
+                <>
+                  <option value="waiting">Ожидают</option>
+                  <option value="called">Вызваны</option>
+                </>
+              )}
+            </select>
           )}
 
           {activeTab === 'events' && (
-            <Button
-              variant="primary"
-              icon="➕"
+            <button
+              style={styles.createButton}
               onClick={() => setShowCreateEventModal(true)}
             >
-              Создать событие
-            </Button>
+              ➕ Создать событие
+            </button>
           )}
         </div>
       )}
 
       {/* Content */}
-      <div style={styles.content}>
+      <main style={styles.main}>
         {loading && (
           <div style={styles.loading}>
             <div style={styles.spinner}></div>
-            <p>Загрузка данных...</p>
+            <p>Загрузка...</p>
           </div>
         )}
 
         {error && (
-          <Card style={{ backgroundColor: colors.error.dark, marginBottom: '20px' }}>
-            <div style={styles.errorMessage}>⚠️ {error}</div>
-          </Card>
+          <div style={styles.errorBox}>
+            <span>⚠️</span>
+            <span>{error}</span>
+          </div>
         )}
 
         {!loading && (
           <>
-            {/* Статистика */}
+            {/* Stats */}
             {activeTab === 'stats' && stats && (
-              <div>
-                <div style={styles.statsGrid}>
-                  <Card hoverable>
-                    <div style={styles.statCard}>
-                      <div style={styles.statIcon}>👥</div>
-                      <div style={styles.statValue}>{stats.totalUsers}</div>
-                      <div style={styles.statLabel}>Всего пользователей</div>
-                    </div>
-                  </Card>
-                  <Card hoverable>
-                    <div style={styles.statCard}>
-                      <div style={styles.statIcon}>🎯</div>
-                      <div style={styles.statValue}>{stats.totalEvents}</div>
-                      <div style={styles.statLabel}>Всего событий</div>
-                    </div>
-                  </Card>
-                  <Card hoverable>
-                    <div style={styles.statCard}>
-                      <div style={styles.statIcon}>📋</div>
-                      <div style={styles.statValue}>{stats.activeQueues}</div>
-                      <div style={styles.statLabel}>Активных очередей</div>
-                    </div>
-                  </Card>
-                  <Card hoverable>
-                    <div style={styles.statCard}>
-                      <div style={styles.statIcon}>✅</div>
-                      <div style={styles.statValue}>{stats.completedServices}</div>
-                      <div style={styles.statLabel}>Обслужено людей</div>
-                    </div>
-                  </Card>
-                  <Card hoverable>
-                    <div style={styles.statCard}>
-                      <div style={styles.statIcon}>💬</div>
-                      <div style={styles.statValue}>{stats.totalMessages}</div>
-                      <div style={styles.statLabel}>Отправлено сообщений</div>
-                    </div>
-                  </Card>
+              <div style={styles.statsGrid}>
+                <div style={styles.statCard}>
+                  <div style={styles.statIcon}>👥</div>
+                  <div style={styles.statValue}>{stats.totalUsers || 0}</div>
+                  <div style={styles.statLabel}>Пользователей</div>
                 </div>
-
-                {/* Быстрые действия */}
-                <Card style={{ marginTop: '30px' }}>
-                  <h3 style={styles.sectionTitle}>⚡ Быстрые действия</h3>
-                  <div style={styles.quickActions}>
-                    <Button
-                      variant="primary"
-                      icon="➕"
-                      onClick={() => {
-                        setActiveTab('events');
-                        setShowCreateEventModal(true);
-                      }}
-                    >
-                      Создать событие
-                    </Button>
-                    <Button
-                      variant="outline"
-                      icon="👥"
-                      onClick={() => setActiveTab('users')}
-                    >
-                      Управление пользователями
-                    </Button>
-                    <Button
-                      variant="outline"
-                      icon="📋"
-                      onClick={() => setActiveTab('queues')}
-                    >
-                      Управление очередями
-                    </Button>
-                  </div>
-                </Card>
+                <div style={styles.statCard}>
+                  <div style={styles.statIcon}>🎯</div>
+                  <div style={styles.statValue}>{stats.totalEvents || 0}</div>
+                  <div style={styles.statLabel}>Событий</div>
+                </div>
+                <div style={styles.statCard}>
+                  <div style={styles.statIcon}>📋</div>
+                  <div style={styles.statValue}>{stats.activeQueues || 0}</div>
+                  <div style={styles.statLabel}>В очередях</div>
+                </div>
+                <div style={styles.statCard}>
+                  <div style={styles.statIcon}>✅</div>
+                  <div style={styles.statValue}>{stats.completedServices || 0}</div>
+                  <div style={styles.statLabel}>Обслужено</div>
+                </div>
               </div>
             )}
 
-            {/* Пользователи */}
+            {/* Users */}
             {activeTab === 'users' && (
-              <Card>
-                <div style={styles.tableHeader}>
-                  <h3 style={styles.sectionTitle}>
-                    Пользователи ({filteredUsers.length})
-                  </h3>
-                </div>
+              <div style={styles.card}>
+                <h3 style={styles.cardTitle}>Пользователи ({filteredUsers.length})</h3>
                 {filteredUsers.length === 0 ? (
                   <div style={styles.emptyState}>
-                    <div style={styles.emptyIcon}>🔍</div>
-                    <div style={styles.emptyText}>Пользователи не найдены</div>
+                    <div style={styles.emptyIcon}>📭</div>
+                    <p>Пользователи не найдены</p>
                   </div>
                 ) : (
-                  <div style={styles.table}>
-                    {filteredUsers.map((user) => (
-                      <div key={user.id} style={styles.tableRow}>
+                  <div style={styles.list}>
+                    {filteredUsers.map(user => (
+                      <div key={user.id} style={styles.listItem}>
                         <div style={styles.userInfo}>
-                          <div style={styles.userAvatar}>
-                            {user.name.charAt(0).toUpperCase()}
+                          <div style={styles.avatar}>
+                            {user.name?.charAt(0).toUpperCase()}
                           </div>
                           <div>
                             <div style={styles.userName}>{user.name}</div>
                             <div style={styles.userEmail}>{user.email}</div>
-                            {user.phone && (
-                              <div style={styles.userPhone}>📱 {user.phone}</div>
-                            )}
                           </div>
                         </div>
                         <div style={styles.userMeta}>
-                          <div style={styles.userRole}>
+                          <span style={{
+                            ...styles.roleBadge,
+                            backgroundColor: user.role === 'admin' ? '#FFDD2D' : '#E0E0E0',
+                            color: user.role === 'admin' ? '#191919' : '#666666',
+                          }}>
                             {user.role === 'admin' ? '👨‍💼 Админ' : '👤 Пользователь'}
-                          </div>
-                          <div style={styles.userDate}>
-                            Регистрация: {new Date(user.created_at).toLocaleDateString('ru-RU')}
-                          </div>
+                          </span>
                         </div>
-                        <div style={styles.rowActions}>
-                          <Button
-                            variant="outline"
-                            size="small"
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setShowUserDetailsModal(true);
-                            }}
-                            icon="👁️"
-                          >
-                            Детали
-                          </Button>
-                          <Button
-                            variant="error"
-                            size="small"
+                        <div style={styles.actions}>
+                          <button
+                            style={styles.btnDanger}
                             onClick={() => handleDeleteUser(user.id, user.name)}
-                            icon="🗑️"
                           >
-                            Удалить
-                          </Button>
+                            🗑️ Удалить
+                          </button>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-              </Card>
+              </div>
             )}
 
-            {/* События */}
+            {/* Events */}
             {activeTab === 'events' && (
               <div>
                 {filteredEvents.length === 0 ? (
-                  <Card>
+                  <div style={styles.card}>
                     <div style={styles.emptyState}>
-                      <div style={styles.emptyIcon}>🔍</div>
-                      <div style={styles.emptyText}>
-                        {searchTerm ? 'События не найдены' : 'Нет событий'}
-                      </div>
-                      {!searchTerm && (
-                        <Button
-                          variant="primary"
-                          icon="➕"
-                          onClick={() => setShowCreateEventModal(true)}
-                          style={{ marginTop: '20px' }}
-                        >
-                          Создать первое событие
-                        </Button>
-                      )}
+                      <div style={styles.emptyIcon}>📭</div>
+                      <p>События не найдены</p>
+                      <button
+                        style={styles.createButton}
+                        onClick={() => setShowCreateEventModal(true)}
+                      >
+                        ➕ Создать первое событие
+                      </button>
                     </div>
-                  </Card>
+                  </div>
                 ) : (
                   <div style={styles.eventsGrid}>
-                    {filteredEvents.map((event) => (
-                      <Card key={event.id} hoverable>
-                        <div style={styles.eventCard}>
-                          <div style={styles.eventHeader}>
-                            <div style={styles.eventIcon}>🎯</div>
-                            <div style={{
-                              ...styles.eventStatusBadge,
-                              backgroundColor: event.is_active ? colors.success.main : colors.error.main,
-                            }}>
-                              {event.is_active ? '✓ Активно' : '✕ Неактивно'}
-                            </div>
+                    {filteredEvents.map(event => (
+                      <div key={event.id} style={styles.eventCard}>
+                        <div style={styles.eventHeader}>
+                          <span style={styles.eventIcon}>🎯</span>
+                          <span style={{
+                            ...styles.statusBadge,
+                            backgroundColor: event.is_active ? '#4CAF50' : '#F44336',
+                          }}>
+                            {event.is_active ? '✓ Активно' : '✕ Неактивно'}
+                          </span>
+                        </div>
+                        <h4 style={styles.eventName}>{event.name}</h4>
+                        <p style={styles.eventDescription}>
+                          {event.description || 'Без описания'}
+                        </p>
+                        <div style={styles.eventMeta}>
+                          <div style={styles.metaItem}>
+                            <span>📍</span>
+                            <span>{event.location || 'Не указано'}</span>
                           </div>
-                          <h4 style={styles.eventName}>{event.name}</h4>
-                          <p style={styles.eventDescription}>
-                            {event.description || 'Без описания'}
-                          </p>
-                          <div style={styles.eventMeta}>
-                            <div style={styles.metaItem}>
-                              <span style={styles.metaIcon}>📍</span>
-                              <span>{event.location || 'Не указано'}</span>
-                            </div>
-                            <div style={styles.metaItem}>
-                              <span style={styles.metaIcon}>⏱️</span>
-                              <span>{event.avg_service_time} мин</span>
-                            </div>
-                            <div style={styles.metaItem}>
-                              <span style={styles.metaIcon}>👥</span>
-                              <span>До {event.max_queue_size}</span>
-                            </div>
+                          <div style={styles.metaItem}>
+                            <span>⏱️</span>
+                            <span>{event.avg_service_time} мин</span>
                           </div>
-                          <div style={styles.eventActions}>
-                            <Link
-                              to={`/event/${event.id}`}
-                              style={{ textDecoration: 'none', flex: 1 }}
-                            >
-                              <Button variant="outline" size="small" fullWidth icon="👁️">
-                                Просмотр
-                              </Button>
-                            </Link>
-                            <Button
-                              variant="error"
-                              size="small"
-                              onClick={() => handleDeleteEvent(event.id, event.name)}
-                              icon="🗑️"
-                            >
-                              Удалить
-                            </Button>
+                          <div style={styles.metaItem}>
+                            <span>👥</span>
+                            <span>Макс: {event.max_queue_size}</span>
                           </div>
                         </div>
-                      </Card>
+                        <div style={styles.eventActions}>
+                          <Link to={`/event/${event.id}`} style={{ textDecoration: 'none', flex: 1 }}>
+                            <button style={styles.btnPrimary}>👁️ Открыть</button>
+                          </Link>
+                          <button
+                            style={event.is_active ? styles.btnWarning : styles.btnSuccess}
+                            onClick={() => handleToggleEvent(event.id, event.is_active)}
+                          >
+                            {event.is_active ? '⏸️' : '▶️'}
+                          </button>
+                          <button
+                            style={styles.btnDanger}
+                            onClick={() => handleDeleteEvent(event.id, event.name)}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
               </div>
             )}
 
-            {/* Очереди */}
+            {/* Queues */}
             {activeTab === 'queues' && (
-              <Card>
-                <h3 style={styles.sectionTitle}>
-                  Управление очередями ({filteredQueues.length})
-                </h3>
+              <div style={styles.card}>
+                <h3 style={styles.cardTitle}>Очереди ({filteredQueues.length})</h3>
                 {filteredQueues.length === 0 ? (
                   <div style={styles.emptyState}>
-                    <div style={styles.emptyIcon}>🔍</div>
-                    <div style={styles.emptyText}>Очереди не найдены</div>
+                    <div style={styles.emptyIcon}>📭</div>
+                    <p>Очереди пусты</p>
                   </div>
                 ) : (
-                  <div style={styles.table}>
-                    {filteredQueues.map((queue) => (
-                      <div key={queue.id} style={styles.queueRow}>
-                        <div style={styles.queuePosition}>
-                          #{queue.position}
+                  <div style={styles.list}>
+                    {filteredQueues.map(queue => (
+                      <div key={queue.id} style={styles.queueItem}>
+                        <div style={styles.queuePosition}>#{queue.position}</div>
+                        <div style={styles.queueInfo}>
+                          <div style={styles.queueUserName}>{queue.user_name}</div>
+                          <div style={styles.queueEventName}>🎯 {queue.event_name}</div>
                         </div>
-                        <div style={styles.queueMainInfo}>
-                          <div style={styles.queueUser}>
-                            <div style={styles.queueUserName}>{queue.user_name}</div>
-                            <div style={styles.queueUserEmail}>{queue.user_email}</div>
-                          </div>
-                          <div style={styles.queueEvent}>
-                            🎯 {queue.event_name}
-                          </div>
-                        </div>
-                        <div style={styles.queueStatusSection}>
-                          <div style={{
-                            ...styles.queueStatusBadge,
-                            backgroundColor:
-                              queue.status === 'waiting' ? colors.success.main :
-                              queue.status === 'paused' ? colors.warning.main :
-                              colors.text.secondary,
-                          }}>
-                            {queue.status === 'waiting' ? '⏳ Ожидает' :
-                             queue.status === 'paused' ? '⏸️ Пауза' :
-                             '✅ Завершен'}
-                          </div>
-                          <div style={styles.queueTime}>
-                            {new Date(queue.joined_at).toLocaleString('ru-RU', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </div>
+                        <div style={{
+                          ...styles.queueStatus,
+                          backgroundColor: queue.status === 'waiting' ? '#E3F2FD' : '#FFF3E0',
+                          color: queue.status === 'waiting' ? '#1976D2' : '#E65100',
+                        }}>
+                          {queue.status === 'waiting' ? '⏳ Ожидает' : '📢 Вызван'}
                         </div>
                         <div style={styles.queueActions}>
-                          <Button
-                            variant="success"
-                            size="small"
-                            onClick={() => handleCompleteQueue(queue.id, queue.user_name)}
-                            icon="✅"
-                            disabled={queue.status === 'completed'}
-                          >
-                            Завершить
-                          </Button>
-                          <Button
-                            variant="warning"
-                            size="small"
-                            onClick={() => handleSkipQueue(queue.id, queue.user_name)}
-                            icon="⏭️"
-                            disabled={queue.status === 'completed'}
-                          >
-                            Пропустить
-                          </Button>
-                          <Button
-                            variant="error"
-                            size="small"
+                          {queue.status === 'waiting' ? (
+                            <button
+                              style={styles.btnSuccess}
+                              onClick={() => handleCallQueue(queue.id)}
+                            >
+                              📢 Вызвать
+                            </button>
+                          ) : (
+                            <button
+                              style={styles.btnSuccess}
+                              onClick={() => handleCompleteQueue(queue.id)}
+                            >
+                              ✅ Завершить
+                            </button>
+                          )}
+                          <button
+                            style={styles.btnDanger}
                             onClick={() => handleDeleteQueue(queue.id, queue.user_name)}
-                            icon="🗑️"
                           >
-                            Удалить
-                          </Button>
+                            🗑️
+                          </button>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-              </Card>
+              </div>
             )}
           </>
         )}
-      </div>
+      </main>
 
-      {/* Модальное окно создания события */}
-      <Modal
-        isOpen={showCreateEventModal}
-        onClose={() => setShowCreateEventModal(false)}
-        title="➕ Создать новое событие"
-      >
-        <form onSubmit={handleCreateEvent} style={styles.form}>
-          <div style={styles.formGroup}>
-            <label style={styles.formLabel}>Название события *</label>
-            <input
-              type="text"
-              value={eventForm.name}
-              onChange={(e) => setEventForm({ ...eventForm, name: e.target.value })}
-              style={styles.formInput}
-              placeholder="Викторина по IT"
-              required
-            />
-          </div>
-
-          <div style={styles.formGroup}>
-            <label style={styles.formLabel}>Описание</label>
-            <textarea
-              value={eventForm.description}
-              onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-              style={{ ...styles.formInput, minHeight: '100px', resize: 'vertical' }}
-              placeholder="Интересная викторина с призами"
-            />
-          </div>
-
-          <div style={styles.formGroup}>
-            <label style={styles.formLabel}>Локация</label>
-            <input
-              type="text"
-              value={eventForm.location}
-              onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
-              style={styles.formInput}
-              placeholder="Главная сцена"
-            />
-          </div>
-
-          <div style={styles.formRow}>
-            <div style={styles.formGroup}>
-              <label style={styles.formLabel}>Время обслуживания (мин)</label>
-              <input
-                type="number"
-                value={eventForm.avg_service_time}
-                onChange={(e) => setEventForm({ ...eventForm, avg_service_time: parseInt(e.target.value) })}
-                style={styles.formInput}
-                min="1"
-                required
-              />
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.formLabel}>Макс. очередь (чел)</label>
-              <input
-                type="number"
-                value={eventForm.max_queue_size}
-                onChange={(e) => setEventForm({ ...eventForm, max_queue_size: parseInt(e.target.value) })}
-                style={styles.formInput}
-                min="1"
-                required
-              />
-            </div>
-          </div>
-
-          <div style={styles.formActions}>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowCreateEventModal(false)}
-            >
-              Отмена
-            </Button>
-            <Button type="submit" variant="primary" icon="✓">
-              Создать событие
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Модальное окно деталей пользователя */}
-      <Modal
-        isOpen={showUserDetailsModal}
-        onClose={() => setShowUserDetailsModal(false)}
-        title="👤 Детали пользователя"
-      >
-        {selectedUser && (
-          <div style={styles.userDetails}>
-            <div style={styles.detailRow}>
-              <div style={styles.detailLabel}>ID:</div>
-              <div style={styles.detailValue}>{selectedUser.id}</div>
-            </div>
-            <div style={styles.detailRow}>
-              <div style={styles.detailLabel}>Имя:</div>
-              <div style={styles.detailValue}>{selectedUser.name}</div>
-            </div>
-            <div style={styles.detailRow}>
-              <div style={styles.detailLabel}>Email:</div>
-              <div style={styles.detailValue}>{selectedUser.email}</div>
-            </div>
-            <div style={styles.detailRow}>
-              <div style={styles.detailLabel}>Телефон:</div>
-              <div style={styles.detailValue}>{selectedUser.phone || 'Не указан'}</div>
-            </div>
-            <div style={styles.detailRow}>
-              <div style={styles.detailLabel}>Роль:</div>
-              <div style={styles.detailValue}>{selectedUser.role}</div>
-            </div>
-            <div style={styles.detailRow}>
-              <div style={styles.detailLabel}>Дата регистрации:</div>
-              <div style={styles.detailValue}>
-                {new Date(selectedUser.created_at).toLocaleString('ru-RU')}
+      {/* Create Event Modal */}
+      {showCreateEventModal && (
+        <div style={styles.modalOverlay} onClick={() => setShowCreateEventModal(false)}>
+          <div style={styles.modal} onClick={e => e.stopPropagation()}>
+            <h2 style={styles.modalTitle}>➕ Создать событие</h2>
+            <form onSubmit={handleCreateEvent}>
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Название *</label>
+                <input
+                  type="text"
+                  value={eventForm.name}
+                  onChange={(e) => setEventForm({ ...eventForm, name: e.target.value })}
+                  style={styles.formInput}
+                  placeholder="Викторина по IT"
+                  required
+                />
               </div>
-            </div>
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Описание</label>
+                <textarea
+                  value={eventForm.description}
+                  onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+                  style={{ ...styles.formInput, minHeight: '80px' }}
+                  placeholder="Интересная викторина с призами"
+                />
+              </div>
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Локация</label>
+                <input
+                  type="text"
+                  value={eventForm.location}
+                  onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
+                  style={styles.formInput}
+                  placeholder="Главная сцена"
+                />
+              </div>
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>Время обсл. (мин)</label>
+                  <input
+                    type="number"
+                    value={eventForm.avg_service_time}
+                    onChange={(e) => setEventForm({ ...eventForm, avg_service_time: parseInt(e.target.value) })}
+                    style={styles.formInput}
+                    min="1"
+                    required
+                  />
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>Макс. очередь</label>
+                  <input
+                    type="number"
+                    value={eventForm.max_queue_size}
+                    onChange={(e) => setEventForm({ ...eventForm, max_queue_size: parseInt(e.target.value) })}
+                    style={styles.formInput}
+                    min="1"
+                    required
+                  />
+                </div>
+              </div>
+              <div style={styles.modalActions}>
+                <button
+                  type="button"
+                  style={styles.btnOutline}
+                  onClick={() => setShowCreateEventModal(false)}
+                >
+                  Отмена
+                </button>
+                <button type="submit" style={styles.btnPrimary}>
+                  ✓ Создать
+                </button>
+              </div>
+            </form>
           </div>
-        )}
-      </Modal>
+        </div>
+      )}
     </div>
   );
 }
 
 const styles = {
   container: {
-    ...commonStyles.container,
-    maxWidth: '1800px',
-    margin: '0 auto',
+    minHeight: '100vh',
+    backgroundColor: '#F5F5F5',
+    fontFamily: '"Inter", sans-serif',
   },
-  header: {
+  nav: {
+    backgroundColor: '#FFFFFF',
+    borderBottom: '1px solid #E0E0E0',
+  },
+  navContent: {
+    maxWidth: '1400px',
+    margin: '0 auto',
+    padding: '20px 40px',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '30px 40px',
-    flexWrap: 'wrap',
+  },
+  logo: {
+    textDecoration: 'none',
+  },
+  logoText: {
+    fontSize: '1.3rem',
+    fontWeight: '700',
+    color: '#191919',
+  },
+  navLinks: {
+    display: 'flex',
+    alignItems: 'center',
     gap: '20px',
   },
+  navLink: {
+    color: '#191919',
+    textDecoration: 'none',
+    fontWeight: '500',
+  },
+  adminBadge: {
+    padding: '6px 12px',
+    backgroundColor: '#FFDD2D',
+    borderRadius: '100px',
+    fontSize: '0.85rem',
+    fontWeight: '600',
+    color: '#191919',
+  },
+  header: {
+    textAlign: 'center',
+    padding: '50px 40px 30px',
+  },
   title: {
-    ...commonStyles.pageTitle,
-    fontSize: '2.8rem',
-    marginBottom: '5px',
+    fontSize: '2.5rem',
+    fontWeight: '700',
+    color: '#191919',
+    marginBottom: '10px',
   },
   subtitle: {
-    fontSize: '1.2rem',
-    color: colors.text.secondary,
+    fontSize: '1.1rem',
+    color: '#666666',
   },
-  headerActions: {
-    display: 'flex',
-    gap: '12px',
-  },
-  tabsContainer: {
+  tabsWrapper: {
     padding: '0 40px',
-    borderBottom: `2px solid ${colors.divider}`,
+    borderBottom: '1px solid #E0E0E0',
+    backgroundColor: '#FFFFFF',
   },
   tabs: {
+    maxWidth: '1200px',
+    margin: '0 auto',
     display: 'flex',
     gap: '5px',
-    overflowX: 'auto',
   },
   tab: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    padding: '15px 25px',
-    background: 'transparent',
+    padding: '18px 25px',
+    backgroundColor: 'transparent',
     border: 'none',
-    borderBottom: `3px solid transparent`,
-    color: colors.text.secondary,
+    borderBottom: '3px solid transparent',
     fontSize: '1rem',
     fontWeight: '500',
+    color: '#666666',
     cursor: 'pointer',
     transition: 'all 0.3s',
-    whiteSpace: 'nowrap',
   },
   tabActive: {
-    color: colors.primary.main,
-    borderBottomColor: colors.primary.main,
-    backgroundColor: `${colors.primary.main}11`,
-  },
-  tabIcon: {
-    fontSize: '1.3rem',
+    color: '#191919',
+    borderBottomColor: '#FFDD2D',
+    backgroundColor: '#FFFDF5',
   },
   controls: {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    padding: '25px 40px',
     display: 'flex',
     gap: '15px',
-    padding: '25px 40px',
     alignItems: 'center',
     flexWrap: 'wrap',
   },
-  searchBar: {
+  searchWrapper: {
     flex: 1,
-    position: 'relative',
     minWidth: '250px',
+    position: 'relative',
   },
   searchIcon: {
     position: 'absolute',
     left: '15px',
     top: '50%',
     transform: 'translateY(-50%)',
-    fontSize: '1.2rem',
+    fontSize: '1.1rem',
   },
   searchInput: {
-    ...commonStyles.input,
-    paddingLeft: '45px',
-    paddingRight: '40px',
-  },
-  clearButton: {
-    position: 'absolute',
-    right: '10px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    background: 'transparent',
-    border: 'none',
-    color: colors.text.secondary,
-    cursor: 'pointer',
-    fontSize: '1.5rem',
-    width: '30px',
-    height: '30px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '50%',
-  },
-  filters: {
-    display: 'flex',
-    gap: '10px',
+    width: '100%',
+    padding: '14px 20px 14px 45px',
+    fontSize: '1rem',
+    border: '2px solid #E0E0E0',
+    borderRadius: '12px',
+    outline: 'none',
+    transition: 'border-color 0.3s',
   },
   filterSelect: {
-    ...commonStyles.input,
-    paddingRight: '35px',
-    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23fff' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
-    backgroundRepeat: 'no-repeat',
-    backgroundPosition: 'right 12px center',
-    appearance: 'none',
+    padding: '14px 20px',
+    fontSize: '1rem',
+    border: '2px solid #E0E0E0',
+    borderRadius: '12px',
+    backgroundColor: '#FFFFFF',
+    cursor: 'pointer',
   },
-  content: {
-    padding: '0 40px 40px',
+  createButton: {
+    padding: '14px 24px',
+    backgroundColor: '#FFDD2D',
+    color: '#191919',
+    border: 'none',
+    borderRadius: '12px',
+    fontSize: '1rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+  },
+  main: {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    padding: '0 40px 60px',
   },
   loading: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '400px',
-    color: colors.text.secondary,
-    fontSize: '1.1rem',
+    padding: '80px 20px',
+    color: '#666666',
   },
   spinner: {
     width: '50px',
     height: '50px',
-    border: `4px solid ${colors.divider}`,
-    borderTop: `4px solid ${colors.primary.main}`,
+    border: '4px solid #E0E0E0',
+    borderTop: '4px solid #FFDD2D',
     borderRadius: '50%',
     animation: 'spin 1s linear infinite',
     marginBottom: '20px',
   },
-  errorMessage: {
-    textAlign: 'center',
-    color: 'white',
-    fontSize: '1.1rem',
-    padding: '10px',
+  errorBox: {
+    padding: '20px',
+    backgroundColor: '#FFF3F3',
+    border: '2px solid #F44336',
+    borderRadius: '16px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    color: '#C62828',
+    marginBottom: '25px',
   },
   statsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: '25px',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+    gap: '20px',
   },
   statCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: '20px',
+    padding: '35px 25px',
     textAlign: 'center',
-    padding: '30px 20px',
+    border: '1px solid #E0E0E0',
   },
   statIcon: {
-    fontSize: '4rem',
+    fontSize: '3rem',
     marginBottom: '15px',
   },
   statValue: {
-    fontSize: '3.5rem',
-    fontWeight: '700',
-    background: colors.primary.gradient,
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-    marginBottom: '10px',
-    lineHeight: '1',
+    fontSize: '3rem',
+    fontWeight: '800',
+    color: '#191919',
+    marginBottom: '8px',
   },
   statLabel: {
-    fontSize: '1.1rem',
-    color: colors.text.secondary,
-    fontWeight: '500',
+    fontSize: '1rem',
+    color: '#666666',
   },
-  quickActions: {
-    display: 'flex',
-    gap: '15px',
-    flexWrap: 'wrap',
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: '24px',
+    padding: '30px',
+    border: '1px solid #E0E0E0',
   },
-  tableHeader: {
-    marginBottom: '20px',
-  },
-  sectionTitle: {
-    fontSize: '1.6rem',
+  cardTitle: {
+    fontSize: '1.4rem',
     fontWeight: '600',
-    color: colors.info.main,
-    margin: 0,
+    color: '#191919',
+    marginBottom: '25px',
   },
   emptyState: {
     textAlign: 'center',
-    padding: '80px 20px',
+    padding: '60px 20px',
+    color: '#666666',
   },
   emptyIcon: {
-    fontSize: '5rem',
-    marginBottom: '20px',
+    fontSize: '4rem',
+    marginBottom: '15px',
     opacity: 0.5,
   },
-  emptyText: {
-    fontSize: '1.3rem',
-    color: colors.text.secondary,
-  },
-  table: {
+  list: {
     display: 'flex',
     flexDirection: 'column',
     gap: '12px',
   },
-  tableRow: {
+  listItem: {
     display: 'flex',
     alignItems: 'center',
     gap: '20px',
     padding: '20px',
-    backgroundColor: colors.background.input,
-    borderRadius: '12px',
-    transition: 'all 0.3s',
+    backgroundColor: '#F5F5F5',
+    borderRadius: '16px',
   },
   userInfo: {
     display: 'flex',
@@ -939,225 +800,261 @@ const styles = {
     gap: '15px',
     flex: 1,
   },
-  userAvatar: {
-    width: '55px',
-    height: '55px',
+  avatar: {
+    width: '50px',
+    height: '50px',
     borderRadius: '50%',
-    background: colors.primary.gradient,
+    backgroundColor: '#FFDD2D',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '1.6rem',
-    fontWeight: 'bold',
-    color: 'white',
-    flexShrink: 0,
+    fontSize: '1.3rem',
+    fontWeight: '700',
+    color: '#191919',
   },
   userName: {
-    fontSize: '1.15rem',
+    fontSize: '1.1rem',
     fontWeight: '600',
-    color: colors.text.primary,
-    marginBottom: '4px',
+    color: '#191919',
+    marginBottom: '3px',
   },
   userEmail: {
-    fontSize: '0.95rem',
-    color: colors.text.secondary,
-  },
-  userPhone: {
     fontSize: '0.9rem',
-    color: colors.text.secondary,
-    marginTop: '2px',
+    color: '#666666',
   },
-  userMeta: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-  },
-  userRole: {
+  userMeta: {},
+  roleBadge: {
     padding: '6px 14px',
-    backgroundColor: colors.info.main,
-    borderRadius: '12px',
+    borderRadius: '100px',
     fontSize: '0.85rem',
     fontWeight: '600',
-    color: 'white',
-    textAlign: 'center',
   },
-  userDate: {
-    fontSize: '0.85rem',
-    color: colors.text.secondary,
-  },
-  rowActions: {
+  actions: {
     display: 'flex',
     gap: '10px',
   },
   eventsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-    gap: '25px',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+    gap: '20px',
   },
   eventCard: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '15px',
+    backgroundColor: '#FFFFFF',
+    borderRadius: '20px',
+    padding: '25px',
+    border: '1px solid #E0E0E0',
   },
   eventHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: '15px',
   },
   eventIcon: {
-    fontSize: '2.5rem',
+    fontSize: '2rem',
   },
-  eventStatusBadge: {
-    padding: '6px 14px',
-    borderRadius: '12px',
-    fontSize: '0.85rem',
+  statusBadge: {
+    padding: '6px 12px',
+    borderRadius: '100px',
+    fontSize: '0.8rem',
     fontWeight: '600',
-    color: 'white',
+    color: '#FFFFFF',
   },
   eventName: {
-    fontSize: '1.4rem',
+    fontSize: '1.3rem',
     fontWeight: '600',
-    color: colors.text.primary,
-    margin: 0,
+    color: '#191919',
+    marginBottom: '10px',
   },
   eventDescription: {
-    fontSize: '1rem',
-    color: colors.text.secondary,
-    lineHeight: '1.5',
-    minHeight: '48px',
+    fontSize: '0.95rem',
+    color: '#666666',
+    marginBottom: '15px',
+    minHeight: '40px',
   },
   eventMeta: {
     display: 'flex',
     flexDirection: 'column',
     gap: '8px',
     padding: '15px',
-    backgroundColor: colors.background.input,
-    borderRadius: '10px',
+    backgroundColor: '#F5F5F5',
+    borderRadius: '12px',
+    marginBottom: '15px',
   },
   metaItem: {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    fontSize: '0.95rem',
-    color: colors.text.secondary,
-  },
-  metaIcon: {
-    fontSize: '1.2rem',
+    fontSize: '0.9rem',
+    color: '#666666',
   },
   eventActions: {
     display: 'flex',
     gap: '10px',
   },
-  queueRow: {
+  queueItem: {
     display: 'flex',
     alignItems: 'center',
     gap: '20px',
     padding: '20px',
-    backgroundColor: colors.background.input,
-    borderRadius: '12px',
+    backgroundColor: '#F5F5F5',
+    borderRadius: '16px',
   },
   queuePosition: {
-    fontSize: '1.8rem',
+    fontSize: '1.5rem',
     fontWeight: '700',
-    color: colors.primary.main,
-    minWidth: '70px',
-    textAlign: 'center',
-    padding: '10px',
-    backgroundColor: `${colors.primary.main}22`,
-    borderRadius: '10px',
+    color: '#191919',
+    minWidth: '50px',
   },
-  queueMainInfo: {
+  queueInfo: {
     flex: 1,
   },
-  queueUser: {
-    marginBottom: '8px',
-  },
   queueUserName: {
-    fontSize: '1.15rem',
+    fontSize: '1.1rem',
     fontWeight: '600',
-    color: colors.text.primary,
-    marginBottom: '4px',
+    color: '#191919',
+    marginBottom: '3px',
   },
-  queueUserEmail: {
+  queueEventName: {
     fontSize: '0.9rem',
-    color: colors.text.secondary,
+    color: '#666666',
   },
-  queueEvent: {
-    fontSize: '0.95rem',
-    color: colors.info.main,
-    fontWeight: '500',
-  },
-  queueStatusSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-    alignItems: 'flex-end',
-  },
-  queueStatusBadge: {
-    padding: '6px 14px',
-    borderRadius: '12px',
-    fontSize: '0.9rem',
-    fontWeight: '600',
-    color: 'white',
-  },
-  queueTime: {
+  queueStatus: {
+    padding: '8px 14px',
+    borderRadius: '100px',
     fontSize: '0.85rem',
-    color: colors.text.secondary,
+    fontWeight: '600',
   },
   queueActions: {
     display: 'flex',
-    gap: '8px',
-    flexWrap: 'wrap',
+    gap: '10px',
   },
-  form: {
+  btnPrimary: {
+    flex: 1,
+    padding: '12px 18px',
+    backgroundColor: '#FFDD2D',
+    color: '#191919',
+    border: 'none',
+    borderRadius: '10px',
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+  },
+  btnOutline: {
+    padding: '12px 18px',
+    backgroundColor: 'transparent',
+    color: '#191919',
+    border: '2px solid #E0E0E0',
+    borderRadius: '10px',
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+  },
+  btnSuccess: {
+    padding: '12px 18px',
+    backgroundColor: '#E8F5E9',
+    color: '#2E7D32',
+    border: '1px solid #4CAF50',
+    borderRadius: '10px',
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+  },
+  btnWarning: {
+    padding: '12px 18px',
+    backgroundColor: '#FFF3E0',
+    color: '#E65100',
+    border: '1px solid #FF9800',
+    borderRadius: '10px',
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+  },
+  btnDanger: {
+    padding: '12px 18px',
+    backgroundColor: '#FFEBEE',
+    color: '#C62828',
+    border: '1px solid #F44336',
+    borderRadius: '10px',
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+  },
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     display: 'flex',
-    flexDirection: 'column',
-    gap: '20px',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: '20px',
+  },
+  modal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: '24px',
+    padding: '35px',
+    maxWidth: '500px',
+    width: '100%',
+    maxHeight: '90vh',
+    overflow: 'auto',
+  },
+  modalTitle: {
+    fontSize: '1.5rem',
+    fontWeight: '600',
+    color: '#191919',
+    marginBottom: '25px',
   },
   formGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
+    marginBottom: '20px',
   },
   formLabel: {
-    fontSize: '1rem',
+    display: 'block',
+    fontSize: '0.95rem',
     fontWeight: '500',
-    color: colors.text.primary,
+    color: '#191919',
+    marginBottom: '8px',
   },
   formInput: {
-    ...commonStyles.input,
+    width: '100%',
+    padding: '14px 18px',
+    fontSize: '1rem',
+    border: '2px solid #E0E0E0',
+    borderRadius: '12px',
+    outline: 'none',
+    boxSizing: 'border-box',
   },
   formRow: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
     gap: '15px',
   },
-  formActions: {
+  modalActions: {
     display: 'flex',
     gap: '12px',
     justifyContent: 'flex-end',
-    marginTop: '10px',
-  },
-  userDetails: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '15px',
-  },
-  detailRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    padding: '15px',
-    backgroundColor: colors.background.input,
-    borderRadius: '10px',
-  },
-  detailLabel: {
-    fontWeight: '600',
-    color: colors.text.secondary,
-  },
-  detailValue: {
-    color: colors.text.primary,
-    textAlign: 'right',
+    marginTop: '25px',
   },
 };
+
+// CSS анимации
+const addKeyframes = () => {
+  const styleId = 'admin-page-keyframes';
+  if (document.getElementById(styleId)) return;
+  
+  const style = document.createElement('style');
+  style.id = styleId;
+  style.textContent = `
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  `;
+  document.head.appendChild(style);
+};
+addKeyframes();
 
 export default AdminPage;
