@@ -1021,3 +1021,62 @@ a.btn {
 #mobileMenu a:hover {
   color: var(--brand);
 }
+
+/* ===== T-Bank Yellow Buttons ===== */
+.btn {
+  background: #FFDD2D !important;
+  color: #191919 !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(255, 221, 45, 0.3) !important;
+}
+
+.btn::before {
+  display: none !important;
+}
+
+.btn:hover {
+  background: #E5C726 !important;
+  filter: none !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(255, 221, 45, 0.4) !important;
+}
+
+.btn.outline {
+  background: transparent !important;
+  color: var(--fg) !important;
+  border: 2px solid #FFDD2D !important;
+  box-shadow: none !important;
+}
+
+.btn.outline:hover {
+  background: rgba(255, 221, 45, 0.1) !important;
+  border-color: #E5C726 !important;
+}
+
+/* Light theme adjustments */
+:root[data-theme='light'] .btn {
+  color: #191919 !important;
+}
+
+:root[data-theme='light'] .btn.outline {
+  color: #191919 !important;
+  border-color: #191919 !important;
+}
+
+:root[data-theme='light'] .btn.outline:hover {
+  background: rgba(25, 25, 25, 0.05) !important;
+}
+
+/* ===== T-Bank Yellow Logo ===== */
+.logo__mark {
+  background: #FFDD2D !important;
+  color: #191919 !important;
+  box-shadow: 0 4px 14px rgba(255, 221, 45, 0.3) !important;
+}
+
+/* Footer logo */
+.footer__brand .logo__mark {
+  background: #FFDD2D !important;
+  color: #191919 !important;
+  box-shadow: 0 4px 14px rgba(255, 221, 45, 0.3) !important;
+}
