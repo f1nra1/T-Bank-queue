@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 import Button from '../components/common/Button';
-import Card from '../components/common/Card';
-import { colors, commonStyles } from '../styles/theme';
 
 function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -31,7 +29,7 @@ function RegisterPage() {
 
     // Валидация
     if (formData.password !== formData.confirmPassword) {
-      setError('Пароли не совпадают!');
+      setError('Пароли не совпадают');
       return;
     }
 
@@ -44,332 +42,394 @@ function RegisterPage() {
 
     try {
       const { confirmPassword, ...dataToSend } = formData;
-      const response = await authService.register(dataToSend);
-      
-      console.log('✅ Регистрация успешна:', response);
+      await authService.register(dataToSend);
       navigate('/events');
     } catch (err) {
-      console.error('❌ Ошибка регистрации:', err);
       setError(err.error || err.message || 'Ошибка регистрации');
     } finally {
       setLoading(false);
     }
   };
 
-  const passwordStrength = () => {
+  const getPasswordStrength = () => {
     const length = formData.password.length;
     if (length === 0) return null;
-    if (length < 6) return { text: 'Слабый', color: colors.error.main };
-    if (length < 10) return { text: 'Средний', color: colors.warning.main };
-    return { text: 'Сильный', color: colors.success.main };
+    if (length < 6) return { label: 'Слабый', color: '#F44336', width: '33%' };
+    if (length < 10) return { label: 'Средний', color: '#FF9800', width: '66%' };
+    return { label: 'Сильный', color: '#4CAF50', width: '100%' };
   };
 
-  const strength = passwordStrength();
+  const strength = getPasswordStrength();
 
   return (
     <div style={styles.container}>
-      <div style={styles.content}>
-        {/* Logo/Brand */}
-        <div style={styles.brand}>
-          <div style={styles.logo}>📝</div>
-          <h1 style={styles.title}>Регистрация</h1>
-          <p style={styles.subtitle}>Создайте аккаунт для управления очередями</p>
+      {/* Navigation */}
+      <nav style={styles.nav}>
+        <div style={styles.navContent}>
+          <Link to="/" style={styles.logo}>
+            <span style={styles.logoText}>T-Bank Queue</span>
+          </Link>
+          <div style={styles.navLinks}>
+            <Link to="/events" style={styles.navLink}>Мероприятия</Link>
+            <Link to="/login" style={styles.navLink}>Войти</Link>
+          </div>
         </div>
+      </nav>
 
-        {/* Register Form */}
-        <Card style={styles.formCard}>
+      {/* Main Content */}
+      <main style={styles.main}>
+        <div style={styles.formContainer}>
+          {/* Header */}
+          <div style={styles.header}>
+            <h1 style={styles.title}>Регистрация</h1>
+            <p style={styles.subtitle}>
+              Создайте аккаунт, чтобы управлять очередями
+            </p>
+          </div>
+
+          {/* Error Message */}
           {error && (
-            <div style={styles.errorAlert}>
+            <div style={styles.errorBox}>
               <span style={styles.errorIcon}>⚠️</span>
               <span>{error}</span>
             </div>
           )}
 
+          {/* Form */}
           <form onSubmit={handleSubmit} style={styles.form}>
-            {/* Name Input */}
+            {/* Name */}
             <div style={styles.inputGroup}>
-              <label style={styles.label}>
-                <span style={styles.labelIcon}>👤</span>
-                Имя
-              </label>
+              <label style={styles.label}>Имя</label>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                style={commonStyles.input}
+                style={styles.input}
                 placeholder="Иван Иванов"
                 required
                 disabled={loading}
-                onFocus={(e) => {
-                  e.target.style.borderColor = colors.primary.main;
-                  e.target.style.boxShadow = `0 0 0 3px ${colors.primary.main}22`;
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = colors.divider;
-                  e.target.style.boxShadow = 'none';
-                }}
               />
             </div>
 
-            {/* Email Input */}
+            {/* Email */}
             <div style={styles.inputGroup}>
-              <label style={styles.label}>
-                <span style={styles.labelIcon}>📧</span>
-                Email адрес
-              </label>
+              <label style={styles.label}>Email</label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                style={commonStyles.input}
-                placeholder="your@email.com"
+                style={styles.input}
+                placeholder="ivan@example.com"
                 required
                 disabled={loading}
-                onFocus={(e) => {
-                  e.target.style.borderColor = colors.primary.main;
-                  e.target.style.boxShadow = `0 0 0 3px ${colors.primary.main}22`;
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = colors.divider;
-                  e.target.style.boxShadow = 'none';
-                }}
               />
             </div>
 
-            {/* Phone Input */}
+            {/* Phone */}
             <div style={styles.inputGroup}>
-              <label style={styles.label}>
-                <span style={styles.labelIcon}>📱</span>
-                Телефон (необязательно)
-              </label>
+              <label style={styles.label}>Телефон (необязательно)</label>
               <input
                 type="tel"
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                style={commonStyles.input}
+                style={styles.input}
                 placeholder="+7 (999) 123-45-67"
                 disabled={loading}
-                onFocus={(e) => {
-                  e.target.style.borderColor = colors.primary.main;
-                  e.target.style.boxShadow = `0 0 0 3px ${colors.primary.main}22`;
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = colors.divider;
-                  e.target.style.boxShadow = 'none';
-                }}
               />
             </div>
 
-            {/* Password Input */}
+            {/* Password */}
             <div style={styles.inputGroup}>
-              <label style={styles.label}>
-                <span style={styles.labelIcon}>🔒</span>
-                Пароль
-              </label>
+              <label style={styles.label}>Пароль</label>
               <input
                 type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                style={commonStyles.input}
+                style={styles.input}
                 placeholder="Минимум 6 символов"
                 required
                 minLength="6"
                 disabled={loading}
-                onFocus={(e) => {
-                  e.target.style.borderColor = colors.primary.main;
-                  e.target.style.boxShadow = `0 0 0 3px ${colors.primary.main}22`;
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = colors.divider;
-                  e.target.style.boxShadow = 'none';
-                }}
               />
               {strength && (
-                <div style={styles.strengthIndicator}>
-                  <div style={{
-                    ...styles.strengthBar,
-                    width: strength.text === 'Слабый' ? '33%' : strength.text === 'Средний' ? '66%' : '100%',
-                    backgroundColor: strength.color,
-                  }} />
-                  <span style={{ ...styles.strengthText, color: strength.color }}>
-                    {strength.text}
+                <div style={styles.strengthContainer}>
+                  <div style={styles.strengthBar}>
+                    <div style={{
+                      ...styles.strengthFill,
+                      width: strength.width,
+                      backgroundColor: strength.color,
+                    }}></div>
+                  </div>
+                  <span style={{ ...styles.strengthLabel, color: strength.color }}>
+                    {strength.label}
                   </span>
                 </div>
               )}
             </div>
 
-            {/* Confirm Password Input */}
+            {/* Confirm Password */}
             <div style={styles.inputGroup}>
-              <label style={styles.label}>
-                <span style={styles.labelIcon}>🔐</span>
-                Подтвердите пароль
-              </label>
+              <label style={styles.label}>Подтвердите пароль</label>
               <input
                 type="password"
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                style={commonStyles.input}
+                style={styles.input}
                 placeholder="Повторите пароль"
                 required
                 disabled={loading}
-                onFocus={(e) => {
-                  e.target.style.borderColor = colors.primary.main;
-                  e.target.style.boxShadow = `0 0 0 3px ${colors.primary.main}22`;
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = colors.divider;
-                  e.target.style.boxShadow = 'none';
-                }}
               />
             </div>
 
             {/* Submit Button */}
             <Button
               type="submit"
-              variant="secondary"
+              variant="primary"
               fullWidth
-              disabled={loading}
               size="large"
-              icon={loading ? '⏳' : '🚀'}
+              disabled={loading}
             >
               {loading ? 'Регистрация...' : 'Создать аккаунт'}
             </Button>
           </form>
 
-          {/* Links */}
-          <div style={styles.links}>
-            <div style={styles.divider}>
-              <span style={styles.dividerText}>или</span>
-            </div>
-            <Link to="/login" style={{ textDecoration: 'none' }}>
-              <Button variant="outline" fullWidth icon="🔐">
-                Уже есть аккаунт? Войти
-              </Button>
-            </Link>
+          {/* Footer Links */}
+          <div style={styles.footer}>
+            <p style={styles.footerText}>
+              Уже есть аккаунт?{' '}
+              <Link to="/login" style={styles.footerLink}>
+                Войти
+              </Link>
+            </p>
           </div>
-        </Card>
-
-        {/* Back to Home */}
-        <div style={styles.footer}>
-          <Link to="/" style={{ textDecoration: 'none' }}>
-            <Button variant="ghost" icon="←">
-              Вернуться на главную
-            </Button>
-          </Link>
         </div>
-      </div>
+
+        {/* Side Info */}
+        <div style={styles.sideInfo}>
+          <div style={styles.infoCard}>
+            <div style={styles.infoIcon}>✨</div>
+            <h3 style={styles.infoTitle}>Быстрая регистрация</h3>
+            <p style={styles.infoText}>
+              Займёт всего 30 секунд. Никаких сложных форм.
+            </p>
+          </div>
+
+          <div style={styles.infoCard}>
+            <div style={styles.infoIcon}>🔒</div>
+            <h3 style={styles.infoTitle}>Безопасность данных</h3>
+            <p style={styles.infoText}>
+              Все данные защищены и не передаются третьим лицам.
+            </p>
+          </div>
+
+          <div style={styles.infoCard}>
+            <div style={styles.infoIcon}>🎯</div>
+            <h3 style={styles.infoTitle}>Сразу в работу</h3>
+            <p style={styles.infoText}>
+              После регистрации можете сразу встать в очередь.
+            </p>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
 
 const styles = {
   container: {
-    ...commonStyles.container,
+    minHeight: '100vh',
+    backgroundColor: '#F5F5F5',
+    fontFamily: '"Inter", sans-serif',
+  },
+
+  // Navigation
+  nav: {
+    backgroundColor: '#FFFFFF',
+    borderBottom: '1px solid #E0E0E0',
+  },
+  navContent: {
+    maxWidth: '1400px',
+    margin: '0 auto',
+    padding: '20px 40px',
     display: 'flex',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: '40px 20px',
-  },
-  content: {
-    width: '100%',
-    maxWidth: '500px',
-    animation: 'fadeIn 0.6s ease-out',
-  },
-  brand: {
-    textAlign: 'center',
-    marginBottom: '40px',
   },
   logo: {
-    fontSize: '4rem',
-    marginBottom: '20px',
+    textDecoration: 'none',
+  },
+  logoText: {
+    fontSize: '1.3rem',
+    fontWeight: '700',
+    color: '#191919',
+    letterSpacing: '-0.02em',
+  },
+  navLinks: {
+    display: 'flex',
+    gap: '30px',
+  },
+  navLink: {
+    color: '#191919',
+    textDecoration: 'none',
+    fontSize: '1rem',
+    fontWeight: '500',
+    transition: 'color 0.3s ease',
+  },
+
+  // Main
+  main: {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    padding: '60px 40px',
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '80px',
+    alignItems: 'start',
+  },
+
+  // Form Container
+  formContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: '24px',
+    padding: '50px',
+    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)',
+  },
+
+  // Header
+  header: {
+    marginBottom: '40px',
   },
   title: {
-    fontSize: '2.5rem',
+    fontSize: '3rem',
     fontWeight: '700',
-    background: colors.secondary.gradient,
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
+    color: '#191919',
     marginBottom: '10px',
+    letterSpacing: '-0.02em',
   },
   subtitle: {
     fontSize: '1.1rem',
-    color: colors.text.secondary,
+    color: '#666666',
+    lineHeight: '1.5',
   },
-  formCard: {
-    padding: '40px',
-  },
-  errorAlert: {
-    backgroundColor: `${colors.error.main}22`,
-    border: `2px solid ${colors.error.main}`,
-    borderRadius: '10px',
-    padding: '15px',
-    marginBottom: '25px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    color: colors.error.light,
-    fontSize: '1rem',
-  },
+
+  // Error
+  errorBox: {
+  backgroundColor: '#FFF3F3',
+  border: '3px solid #F44336', // Изменили с 1px на 3px
+  borderRadius: '30px', // Увеличили закругление
+  padding: '16px',
+  marginBottom: '30px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
+  color: '#C62828',
+  fontSize: '0.95rem',
+},
   errorIcon: {
-    fontSize: '1.3rem',
+    fontSize: '1.2rem',
   },
+
+  // Form
   form: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '20px',
+    gap: '24px',
   },
   inputGroup: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '10px',
-  },
-  label: {
-    fontSize: '1rem',
-    fontWeight: '500',
-    color: colors.text.primary,
-    display: 'flex',
-    alignItems: 'center',
     gap: '8px',
   },
-  labelIcon: {
-    fontSize: '1.2rem',
+  label: {
+    fontSize: '0.95rem',
+    fontWeight: '500',
+    color: '#191919',
   },
-  strengthIndicator: {
+  input: {
+    width: '100%',
+    padding: '14px 18px',
+    fontSize: '1rem',
+    color: '#191919',
+    backgroundColor: '#F5F5F5',
+    border: '2px solid #E0E0E0',
+    borderRadius: '12px',
+    outline: 'none',
+    transition: 'all 0.3s ease',
+    fontFamily: 'inherit',
+    boxSizing: 'border-box',
+  },
+
+  // Password Strength
+  strengthContainer: {
     marginTop: '8px',
   },
   strengthBar: {
+    width: '100%',
     height: '4px',
+    backgroundColor: '#E0E0E0',
     borderRadius: '2px',
-    transition: 'all 0.3s ease',
-    marginBottom: '5px',
+    overflow: 'hidden',
+    marginBottom: '6px',
   },
-  strengthText: {
+  strengthFill: {
+    height: '100%',
+    transition: 'width 0.3s ease',
+    borderRadius: '2px',
+  },
+  strengthLabel: {
     fontSize: '0.85rem',
     fontWeight: '500',
   },
-  links: {
-    marginTop: '30px',
-  },
-  divider: {
-    display: 'flex',
-    alignItems: 'center',
-    margin: '25px 0',
-  },
-  dividerText: {
-    flex: 1,
-    textAlign: 'center',
-    color: colors.text.secondary,
-    fontSize: '0.9rem',
-  },
+
+  // Footer
   footer: {
-    textAlign: 'center',
     marginTop: '30px',
+    textAlign: 'center',
+  },
+  footerText: {
+    fontSize: '0.95rem',
+    color: '#666666',
+  },
+  footerLink: {
+    color: '#191919',
+    fontWeight: '600',
+    textDecoration: 'none',
+    borderBottom: '2px solid #FFDD2D',
+    transition: 'border-color 0.3s ease',
+  },
+
+  // Side Info
+  sideInfo: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '24px',
+  },
+  infoCard: {
+  backgroundColor: '#FFFFFF',
+  borderRadius: '24px', // Увеличили закругление
+  padding: '30px',
+  boxShadow: '0 2px 12px rgba(0, 0, 0, 0.04)',
+  border: '1px solid #E0E0E0', // Добавили легкую границу
+},
+  infoIcon: {
+    fontSize: '2.5rem',
+    marginBottom: '16px',
+  },
+  infoTitle: {
+    fontSize: '1.3rem',
+    fontWeight: '600',
+    color: '#191919',
+    marginBottom: '12px',
+  },
+  infoText: {
+    fontSize: '1rem',
+    color: '#666666',
+    lineHeight: '1.6',
   },
 };
 

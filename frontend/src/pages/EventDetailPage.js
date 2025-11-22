@@ -3,72 +3,72 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import eventService from '../services/eventService';
 import queueService from '../services/queueService';
 import authService from '../services/authService';
-import useWebSocket from '../hooks/useWebSocket';
-import ChatBox from '../components/chat/ChatBox';
 import Button from '../components/common/Button';
-import Card from '../components/common/Card';
-import { colors, commonStyles } from '../styles/theme';
 
 function EventDetailPage() {
   const { eventId } = useParams();
   const navigate = useNavigate();
+  const currentUser = authService.getCurrentUser();
+
   const [event, setEvent] = useState(null);
-  const [queueData, setQueueData] = useState(null);
+  const [queue, setQueue] = useState([]);
+  const [myQueueEntry, setMyQueueEntry] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
-  
-  const currentUser = authService.getCurrentUser();
-  const isAuthenticated = authService.isAuthenticated();
 
-  const myQueueEntry = queueData?.queue.find(
-    entry => entry.user_id === currentUser?.id
-  );
+  const isEventActive = (event) => {
+    if (!event) return false;
+    return event.is_active == 1 || event.is_active === '1' || event.is_active === true;
+  };
 
   useEffect(() => {
-    loadEventAndQueue();
-    const interval = setInterval(loadEventAndQueue, 30000);
-    return () => clearInterval(interval);
+    loadEventData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
 
-  useWebSocket('queue-updated', (data) => {
-    if (data.eventId === parseInt(eventId)) {
-      loadEventAndQueue();
-    }
-  });
-
-  const loadEventAndQueue = async () => {
+  const loadEventData = async () => {
     setLoading(true);
     setError('');
+
     try {
-      const [eventData, queueDataResponse] = await Promise.all([
-        eventService.getEventById(eventId),
-        queueService.getQueue(eventId),
-      ]);
+      // Загружаем очередь (она включает и событие)
+      const queueResponse = await queueService.getQueueByEvent(eventId);
+      
+      // queueService.getQueueByEvent возвращает массив очереди
+      // но нам нужно также получить событие
+      const eventData = await eventService.getEventById(eventId);
+      
+      console.log('Event data:', eventData);
+      console.log('Queue data:', queueResponse);
+      
       setEvent(eventData);
-      setQueueData(queueDataResponse);
+      setQueue(Array.isArray(queueResponse) ? queueResponse : []);
+
+      if (currentUser && Array.isArray(queueResponse)) {
+        const myEntry = queueResponse.find(entry => entry.user_id === currentUser.id);
+        setMyQueueEntry(myEntry || null);
+      }
     } catch (err) {
-      setError(err.error || 'Ошибка загрузки данных');
+      console.error('Ошибка загрузки:', err);
+      setError(err.error || err.message || 'Ошибка загрузки данных');
     } finally {
       setLoading(false);
     }
   };
 
   const handleJoinQueue = async () => {
-    if (!isAuthenticated) {
-      alert('Войдите в систему, чтобы встать в очередь');
+    if (!currentUser) {
       navigate('/login');
       return;
     }
 
     setActionLoading(true);
-    setError('');
     try {
-      await queueService.joinQueue(eventId, currentUser.id);
-      await loadEventAndQueue();
+      await queueService.joinQueue(eventId);
+      await loadEventData();
     } catch (err) {
-      setError(err.error || 'Ошибка вступления в очередь');
+      alert(err.error || 'Ошибка при входе в очередь');
     } finally {
       setActionLoading(false);
     }
@@ -76,13 +76,17 @@ function EventDetailPage() {
 
   const handleLeaveQueue = async () => {
     if (!myQueueEntry) return;
-    const confirmed = window.confirm('Вы уверены, что хотите покинуть очередь?');
-    if (!confirmed) return;
+
+    if (!window.confirm('Вы уверены, что хотите покинуть очередь?')) {
+      return;
+    }
 
     setActionLoading(true);
     try {
       await queueService.leaveQueue(myQueueEntry.id);
-      await loadEventAndQueue();
+      await loadEventData();
+    } catch (err) {
+      alert(err.error || 'Ошибка при выходе из очереди');
     } finally {
       setActionLoading(false);
     }
@@ -90,10 +94,13 @@ function EventDetailPage() {
 
   const handlePauseQueue = async () => {
     if (!myQueueEntry) return;
+
     setActionLoading(true);
     try {
-      await queueService.pauseQueue(myQueueEntry.id, 15);
-      await loadEventAndQueue();
+      await queueService.pauseQueue(myQueueEntry.id);
+      await loadEventData();
+    } catch (err) {
+      alert(err.error || 'Ошибка при паузе');
     } finally {
       setActionLoading(false);
     }
@@ -101,562 +108,613 @@ function EventDetailPage() {
 
   const handleResumeQueue = async () => {
     if (!myQueueEntry) return;
+
     setActionLoading(true);
     try {
       await queueService.resumeQueue(myQueueEntry.id);
-      await loadEventAndQueue();
+      await loadEventData();
     } finally {
       setActionLoading(false);
     }
   };
 
-  if (loading && !event) {
+  const getEstimatedWaitTime = () => {
+    if (!myQueueEntry || !event) return 0;
+    const position = myQueueEntry.position;
+    return position * event.avg_service_time;
+  };
+
+  if (loading) {
     return (
       <div style={styles.container}>
+        <nav style={styles.nav}>
+          <div style={styles.navContent}>
+            <Link to="/" style={styles.logo}>
+              <span style={styles.logoText}>T-Bank Queue</span>
+            </Link>
+          </div>
+        </nav>
         <div style={styles.loading}>
           <div style={styles.spinner}></div>
-          <p>Загрузка...</p>
+          <p>Загрузка события...</p>
         </div>
       </div>
     );
   }
 
-  if (!event) {
+  if (error || !event) {
     return (
       <div style={styles.container}>
-        <Card>
-          <div style={styles.errorContent}>
-            <div style={styles.errorIcon}>❌</div>
-            <h2>Событие не найдено</h2>
-            <Link to="/events" style={{ textDecoration: 'none', marginTop: '20px', display: 'inline-block' }}>
-              <Button variant="primary" icon="←">Вернуться к событиям</Button>
+        <nav style={styles.nav}>
+          <div style={styles.navContent}>
+            <Link to="/" style={styles.logo}>
+              <span style={styles.logoText}>T-Bank Queue</span>
             </Link>
           </div>
-        </Card>
+        </nav>
+        <div style={styles.errorContainer}>
+          <div style={styles.errorBox}>
+            <span style={styles.errorIcon}>⚠️</span>
+            <span>{error || 'Событие не найдено'}</span>
+          </div>
+          <Link to="/events" style={{ textDecoration: 'none' }}>
+            <Button variant="outline">← Вернуться к событиям</Button>
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
     <div style={styles.container}>
-      {/* Навигация */}
-      <div style={styles.breadcrumbs}>
-        <Link to="/" style={styles.breadcrumbLink}>Главная</Link>
-        <span style={styles.breadcrumbSeparator}>/</span>
-        <Link to="/events" style={styles.breadcrumbLink}>События</Link>
-        <span style={styles.breadcrumbSeparator}>/</span>
-        <span style={styles.breadcrumbCurrent}>{event.name}</span>
-      </div>
-
-      {/* Hero Section - Шапка события */}
-      <div style={styles.heroSection}>
-        <div style={styles.heroBackground}></div>
-        <div style={styles.heroContent}>
-          <div style={styles.heroIcon}>🎯</div>
-          <h1 style={styles.heroTitle}>{event.name}</h1>
-          <p style={styles.heroDescription}>{event.description}</p>
+      {/* Navigation */}
+      <nav style={styles.nav}>
+        <div style={styles.navContent}>
+          <Link to="/" style={styles.logo}>
+            <span style={styles.logoText}>T-Bank Queue</span>
+          </Link>
+          <div style={styles.navLinks}>
+            <Link to="/events" style={styles.navLink}>← К мероприятиям</Link>
+            {currentUser ? (
+              <>
+                <Link to="/my-queues" style={styles.navLink}>Мои очереди</Link>
+                <Button
+                  variant="outline"
+                  size="small"
+                  onClick={() => {
+                    authService.logout();
+                    navigate('/');
+                  }}
+                >
+                  Выйти
+                </Button>
+              </>
+            ) : (
+              <Link to="/login" style={{ textDecoration: 'none' }}>
+                <Button variant="primary" size="small">Войти</Button>
+              </Link>
+            )}
+          </div>
         </div>
-      </div>
+      </nav>
 
-      {/* Основной контент */}
-      <div style={styles.mainContent}>
-        {/* Левая колонка */}
-        <div style={styles.leftColumn}>
-          {/* Информация о событии */}
-          <Card style={styles.infoCard}>
-            <h3 style={styles.cardTitle}>📋 Информация</h3>
-            <div style={styles.infoList}>
-              <div style={styles.infoItem}>
-                <div style={styles.infoIcon}>📍</div>
-                <div style={styles.infoContent}>
-                  <div style={styles.infoLabel}>Локация</div>
-                  <div style={styles.infoValue}>{event.location || 'Не указано'}</div>
-                </div>
-              </div>
-              <div style={styles.infoItem}>
-                <div style={styles.infoIcon}>⏱️</div>
-                <div style={styles.infoContent}>
-                  <div style={styles.infoLabel}>Среднее время</div>
-                  <div style={styles.infoValue}>{event.avg_service_time} минут</div>
-                </div>
-              </div>
-              <div style={styles.infoItem}>
-                <div style={styles.infoIcon}>👥</div>
-                <div style={styles.infoContent}>
-                  <div style={styles.infoLabel}>Макс. очередь</div>
-                  <div style={styles.infoValue}>{event.max_queue_size} человек</div>
-                </div>
-              </div>
-              <div style={styles.infoItem}>
-                <div style={styles.infoIcon}>📊</div>
-                <div style={styles.infoContent}>
-                  <div style={styles.infoLabel}>Сейчас в очереди</div>
-                  <div style={styles.infoValue}>{queueData?.total_in_queue || 0} человек</div>
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* Статус пользователя */}
-          {myQueueEntry ? (
-            <Card style={{
-              ...styles.statusCard,
-              background: myQueueEntry.status === 'waiting' 
-                ? `linear-gradient(135deg, ${colors.success.main}22 0%, ${colors.success.dark}44 100%)`
-                : `linear-gradient(135deg, ${colors.warning.main}22 0%, ${colors.warning.dark}44 100%)`,
-              border: `3px solid ${myQueueEntry.status === 'waiting' ? colors.success.main : colors.warning.main}`,
-            }}>
-              <div style={styles.statusHeader}>
+      {/* Content */}
+      <main style={styles.main}>
+        <div style={styles.mainContent}>
+          {/* Left Column - Event Info */}
+          <div style={styles.leftColumn}>
+            {/* Event Header */}
+            <div style={styles.eventHeader}>
+              <div style={styles.eventIconLarge}>🎯</div>
+              <div>
+                <h1 style={styles.eventTitle}>{event.name}</h1>
                 <div style={{
                   ...styles.statusBadge,
-                  backgroundColor: myQueueEntry.status === 'waiting' ? colors.success.main : colors.warning.main,
+                  backgroundColor: isEventActive(event) ? '#4CAF50' : '#F44336',
                 }}>
-                  {myQueueEntry.status === 'waiting' ? '✅ Активна' : '⏸️ На паузе'}
+                  {isEventActive(event) ? '✓ Активно' : '✕ Завершено'}
                 </div>
-              </div>
-              
-              <div style={styles.positionCircle}>
-                <div style={styles.positionLabel}>Ваша позиция</div>
-                <div style={styles.positionNumber}>{myQueueEntry.position}</div>
-              </div>
-
-              <div style={styles.estimateBox}>
-                <div style={styles.estimateIcon}>⏰</div>
-                <div>
-                  <div style={styles.estimateLabel}>Примерное ожидание</div>
-                  <div style={styles.estimateValue}>~{myQueueEntry.estimated_wait_time} минут</div>
-                </div>
-              </div>
-
-              <div style={styles.statusActions}>
-                {myQueueEntry.status === 'waiting' ? (
-                  <>
-                    <Button
-                      variant="warning"
-                      onClick={handlePauseQueue}
-                      disabled={actionLoading}
-                      fullWidth
-                      icon="⏸️"
-                    >
-                      Временно отойти (15 мин)
-                    </Button>
-                    <Button
-                      variant="error"
-                      onClick={handleLeaveQueue}
-                      disabled={actionLoading}
-                      fullWidth
-                      icon="❌"
-                    >
-                      Покинуть очередь
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    variant="success"
-                    onClick={handleResumeQueue}
-                    disabled={actionLoading}
-                    fullWidth
-                    size="large"
-                    icon="▶️"
-                  >
-                    Вернуться в очередь
-                  </Button>
-                )}
-              </div>
-            </Card>
-          ) : (
-            <Card style={styles.joinCard}>
-              <h3 style={styles.joinTitle}>🚀 Готовы присоединиться?</h3>
-              <p style={styles.joinText}>
-                Встаньте в очередь прямо сейчас и получите уведомление, когда подойдет ваша очередь
-              </p>
-              <Button
-                variant="primary"
-                onClick={handleJoinQueue}
-                disabled={actionLoading || !event.is_active}
-                fullWidth
-                size="large"
-                icon={actionLoading ? '⏳' : '➕'}
-              >
-                {actionLoading ? 'Загрузка...' : 'Встать в очередь'}
-              </Button>
-              {!isAuthenticated && (
-                <p style={styles.loginHint}>
-                  💡 Необходимо <Link to="/login" style={styles.loginLink}>войти</Link> для участия
-                </p>
-              )}
-            </Card>
-          )}
-
-          {/* Ошибки */}
-          {error && (
-            <Card style={{ backgroundColor: colors.error.dark, padding: '20px' }}>
-              <div style={styles.errorMessage}>⚠️ {error}</div>
-            </Card>
-          )}
-        </div>
-
-        {/* Правая колонка */}
-        <div style={styles.rightColumn}>
-          {/* Очередь */}
-          <Card style={styles.queueCard}>
-            <div style={styles.queueHeader}>
-              <h3 style={styles.cardTitle}>📋 Текущая очередь</h3>
-              <div style={styles.queueCounter}>
-                {queueData?.total_in_queue || 0}
               </div>
             </div>
 
-            {queueData?.queue.length === 0 ? (
-              <div style={styles.emptyQueue}>
-                <div style={styles.emptyIcon}>📭</div>
-                <div style={styles.emptyTitle}>Очередь пуста</div>
-                <div style={styles.emptyText}>Будьте первым!</div>
-              </div>
-            ) : (
-              <div style={styles.queueList}>
-                {queueData?.queue.slice(0, 10).map((entry, index) => (
-                  <div
-                    key={entry.id}
-                    style={{
-                      ...styles.queueItem,
-                      ...(entry.user_id === currentUser?.id ? styles.queueItemMe : {}),
-                      ...(entry.status === 'paused' ? styles.queueItemPaused : {}),
-                    }}
-                  >
-                    <div style={styles.queueRank}>
-                      {index < 3 ? (
-                        <span style={styles.queueMedal}>
-                          {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
-                        </span>
-                      ) : (
-                        <span style={styles.queueNumber}>{entry.position}</span>
-                      )}
-                    </div>
-                    <div style={styles.queueUserInfo}>
-                      <div style={styles.queueUserName}>
-                        {entry.user_name}
-                        {entry.user_id === currentUser?.id && (
-                          <span style={styles.youBadge}>Вы</span>
-                        )}
-                      </div>
-                      <div style={styles.queueUserMeta}>
-                        {entry.status === 'paused' && (
-                          <span style={styles.pauseBadge}>⏸️ Пауза</span>
-                        )}
-                        <span style={styles.queueTime}>~{entry.estimated_wait_time} мин</span>
-                      </div>
+            {/* Event Description */}
+            <div style={styles.section}>
+              <h2 style={styles.sectionTitle}>Описание</h2>
+              <p style={styles.description}>
+                {event.description || 'Описание отсутствует'}
+              </p>
+            </div>
+
+            {/* Event Details */}
+            <div style={styles.section}>
+              <h2 style={styles.sectionTitle}>Информация</h2>
+              <div style={styles.infoGrid}>
+                <div style={styles.infoItem}>
+                  <span style={styles.infoIcon}>📍</span>
+                  <div>
+                    <div style={styles.infoLabel}>Локация</div>
+                    <div style={styles.infoValue}>
+                      {event.location || 'Не указана'}
                     </div>
                   </div>
-                ))}
-                {queueData?.queue.length > 10 && (
-                  <div style={styles.queueMore}>
-                    +{queueData.queue.length - 10} человек в очереди
+                </div>
+                <div style={styles.infoItem}>
+                  <span style={styles.infoIcon}>⏱️</span>
+                  <div>
+                    <div style={styles.infoLabel}>Среднее время</div>
+                    <div style={styles.infoValue}>
+                      ~{event.avg_service_time} минут
+                    </div>
+                  </div>
+                </div>
+                <div style={styles.infoItem}>
+                  <span style={styles.infoIcon}>👥</span>
+                  <div>
+                    <div style={styles.infoLabel}>Макс. размер очереди</div>
+                    <div style={styles.infoValue}>
+                      {event.max_queue_size} человек
+                    </div>
+                  </div>
+                </div>
+                <div style={styles.infoItem}>
+                  <span style={styles.infoIcon}>📊</span>
+                  <div>
+                    <div style={styles.infoLabel}>Сейчас в очереди</div>
+                    <div style={styles.infoValue}>
+                      {queue.length} человек
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Queue */}
+          <div style={styles.rightColumn}>
+            {/* My Status */}
+            {myQueueEntry ? (
+              <div style={styles.myStatusCard}>
+                <div style={styles.myStatusHeader}>
+                  <span style={styles.myStatusIcon}>✨</span>
+                  <span style={styles.myStatusTitle}>Ваш статус</span>
+                </div>
+
+                <div style={styles.positionDisplay}>
+                  <div style={styles.positionLabel}>Позиция в очереди</div>
+                  <div style={styles.positionNumber}>#{myQueueEntry.position}</div>
+                </div>
+
+                <div style={styles.waitTimeDisplay}>
+                  <span style={styles.waitTimeIcon}>⏱️</span>
+                  <span style={styles.waitTimeText}>
+                    Примерное время ожидания: <strong>{getEstimatedWaitTime()} минут</strong>
+                  </span>
+                </div>
+
+                <div style={styles.statusDisplay}>
+                  <div style={{
+                    ...styles.statusChip,
+                    backgroundColor: 
+                      myQueueEntry.status === 'waiting' ? '#2196F3' :
+                      myQueueEntry.status === 'called' ? '#FF9800' :
+                      myQueueEntry.status === 'completed' ? '#4CAF50' : '#666666'
+                  }}>
+                    {myQueueEntry.status === 'waiting' ? '⏳ Ожидание' :
+                     myQueueEntry.status === 'called' ? '📢 Вызван' :
+                     myQueueEntry.status === 'completed' ? '✓ Завершено' : myQueueEntry.status}
+                  </div>
+                  {myQueueEntry.is_paused == 1 && (
+                    <div style={{ ...styles.statusChip, backgroundColor: '#FF9800' }}>
+                      ⏸️ На паузе
+                    </div>
+                  )}
+                </div>
+
+                <div style={styles.actionButtons}>
+                  {myQueueEntry.is_paused == 1 ? (
+                    <Button
+                      variant="success"
+                      fullWidth
+                      onClick={handleResumeQueue}
+                      disabled={actionLoading}
+                    >
+                      ▶️ Возобновить
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="warning"
+                      fullWidth
+                      onClick={handlePauseQueue}
+                      disabled={actionLoading || myQueueEntry.status !== 'waiting'}
+                    >
+                      ⏸️ Поставить на паузу
+                    </Button>
+                  )}
+                  <Button
+                    variant="error"
+                    fullWidth
+                    onClick={handleLeaveQueue}
+                    disabled={actionLoading}
+                  >
+                    ✕ Покинуть очередь
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div style={styles.joinCard}>
+                <div style={styles.joinHeader}>
+                  <span style={styles.joinIcon}>🎯</span>
+                  <h3 style={styles.joinTitle}>Встать в очередь</h3>
+                </div>
+                <p style={styles.joinText}>
+                  {queue.length === 0 
+                    ? 'Очередь пуста! Станьте первым!' 
+                    : `В очереди ${queue.length} человек. Примерное время ожидания: ${queue.length * event.avg_service_time} минут`
+                  }
+                </p>
+                {isEventActive(event) ? (
+                  queue.length >= event.max_queue_size ? (
+                    <div style={styles.fullQueueMessage}>
+                      <span>⚠️</span>
+                      <span>Очередь заполнена</span>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="primary"
+                      size="large"
+                      fullWidth
+                      onClick={handleJoinQueue}
+                      disabled={actionLoading}
+                    >
+                      {actionLoading ? 'Вход...' : 'Встать в очередь'}
+                    </Button>
+                  )
+                ) : (
+                  <div style={styles.inactiveMessage}>
+                    <span>✕</span>
+                    <span>Мероприятие завершено</span>
                   </div>
                 )}
               </div>
             )}
-          </Card>
 
-          {/* Чат */}
-          <div style={styles.chatWrapper}>
-            <ChatBox eventId={eventId} />
+            {/* Queue List */}
+            <div style={styles.queueCard}>
+              <div style={styles.queueHeader}>
+                <span style={styles.queueIcon}>📋</span>
+                <h3 style={styles.queueTitle}>Очередь ({queue.length})</h3>
+              </div>
+
+              {queue.length === 0 ? (
+                <div style={styles.emptyQueue}>
+                  <div style={styles.emptyQueueIcon}>📭</div>
+                  <p style={styles.emptyQueueText}>Очередь пуста</p>
+                </div>
+              ) : (
+                <div style={styles.queueList}>
+                  {queue.slice(0, 10).map((entry) => (
+                    <div
+                      key={entry.id}
+                      style={{
+                        ...styles.queueItem,
+                        backgroundColor: entry.user_id === currentUser?.id ? '#FFF9E6' : '#FFFFFF',
+                        border: entry.user_id === currentUser?.id ? '2px solid #FFDD2D' : '1px solid #E0E0E0',
+                      }}
+                    >
+                      <div style={styles.queueItemLeft}>
+                        <div style={styles.queuePosition}>#{entry.position}</div>
+                        <div>
+                          <div style={styles.queueUserName}>
+                            {entry.user_name}
+                            {entry.user_id === currentUser?.id && (
+                              <span style={styles.youBadge}>Вы</span>
+                            )}
+                          </div>
+                          <div style={styles.queueUserStatus}>
+                            {entry.status === 'waiting' ? '⏳ Ожидает' :
+                             entry.status === 'called' ? '📢 Вызван' :
+                             entry.status === 'completed' ? '✓ Завершено' : entry.status}
+                            {entry.is_paused == 1 && ' • ⏸️ Пауза'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {queue.length > 10 && (
+                    <div style={styles.moreItems}>
+                      И еще {queue.length - 10} человек...
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Нижняя навигация */}
-      <div style={styles.bottomNav}>
-        <Link to="/events" style={{ textDecoration: 'none' }}>
-          <Button variant="outline" icon="←">
-            К списку событий
-          </Button>
-        </Link>
-        {currentUser && (
-          <Link to="/my-queues" style={{ textDecoration: 'none' }}>
-            <Button variant="ghost" icon="📋">
-              Мои очереди
-            </Button>
-          </Link>
-        )}
-      </div>
+      </main>
     </div>
   );
 }
 
 const styles = {
   container: {
-    ...commonStyles.container,
-    maxWidth: '1600px',
+    minHeight: '100vh',
+    backgroundColor: '#F5F5F5',
+    fontFamily: '"Inter", sans-serif',
+  },
+  nav: {
+    backgroundColor: '#FFFFFF',
+    borderBottom: '1px solid #E0E0E0',
+  },
+  navContent: {
+    maxWidth: '1400px',
     margin: '0 auto',
-    padding: '0',
-  },
-  loading: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '60vh',
-    color: colors.text.secondary,
-    fontSize: '1.2rem',
-  },
-  spinner: {
-    width: '50px',
-    height: '50px',
-    border: `4px solid ${colors.divider}`,
-    borderTop: `4px solid ${colors.primary.main}`,
-    borderRadius: '50%',
-    animation: 'spin 1s linear infinite',
-    marginBottom: '20px',
-  },
-  breadcrumbs: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
     padding: '20px 40px',
-    fontSize: '0.95rem',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  breadcrumbLink: {
-    color: colors.info.main,
+  logo: {
     textDecoration: 'none',
-    transition: 'opacity 0.3s',
   },
-  breadcrumbSeparator: {
-    color: colors.text.secondary,
-  },
-  breadcrumbCurrent: {
-    color: colors.text.secondary,
-  },
-  heroSection: {
-    position: 'relative',
-    padding: '80px 40px',
-    marginBottom: '40px',
-    overflow: 'hidden',
-  },
-  heroBackground: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: colors.primary.gradient,
-    opacity: 0.1,
-  },
-  heroContent: {
-    position: 'relative',
-    textAlign: 'center',
-    maxWidth: '800px',
-    margin: '0 auto',
-  },
-  heroIcon: {
-    fontSize: '5rem',
-    marginBottom: '20px',
-    animation: 'bounce 2s infinite',
-  },
-  heroTitle: {
-    fontSize: '3.5rem',
+  logoText: {
+    fontSize: '1.3rem',
     fontWeight: '700',
-    background: colors.primary.gradient,
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
-    marginBottom: '20px',
+    color: '#191919',
+    letterSpacing: '-0.02em',
   },
-  heroDescription: {
-    fontSize: '1.4rem',
-    color: colors.text.secondary,
-    lineHeight: '1.6',
+  navLinks: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '20px',
+  },
+  navLink: {
+    color: '#191919',
+    textDecoration: 'none',
+    fontSize: '1rem',
+    fontWeight: '500',
+  },
+  main: {
+    padding: '60px 40px',
   },
   mainContent: {
+    maxWidth: '1400px',
+    margin: '0 auto',
     display: 'grid',
-    gridTemplateColumns: '400px 1fr',
-    gap: '30px',
-    padding: '0 40px 40px',
+    gridTemplateColumns: '1fr 450px',
+    gap: '40px',
   },
   leftColumn: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '25px',
+    gap: '30px',
   },
   rightColumn: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '25px',
-  },
-  cardTitle: {
-    fontSize: '1.4rem',
-    fontWeight: '600',
-    color: colors.info.main,
-    marginBottom: '20px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-  },
-  infoCard: {
-    padding: '30px',
-  },
-  infoList: {
-    display: 'flex',
-    flexDirection: 'column',
     gap: '20px',
+  },
+  eventHeader: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: '24px',
+    padding: '40px',
+    display: 'flex',
+    gap: '25px',
+    alignItems: 'flex-start',
+    border: '1px solid #E0E0E0',
+  },
+  eventIconLarge: {
+    fontSize: '4rem',
+  },
+  eventTitle: {
+    fontSize: '2.5rem',
+    fontWeight: '700',
+    color: '#191919',
+    marginBottom: '15px',
+    letterSpacing: '-0.02em',
+  },
+  statusBadge: {
+    display: 'inline-block',
+    padding: '8px 20px',
+    borderRadius: '100px',
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  section: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: '24px',
+    padding: '35px',
+    border: '1px solid #E0E0E0',
+  },
+  sectionTitle: {
+    fontSize: '1.5rem',
+    fontWeight: '600',
+    color: '#191919',
+    marginBottom: '20px',
+  },
+  description: {
+    fontSize: '1.1rem',
+    lineHeight: '1.7',
+    color: '#666666',
+  },
+  infoGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: '25px',
   },
   infoItem: {
     display: 'flex',
     gap: '15px',
-    alignItems: 'center',
-    padding: '15px',
-    backgroundColor: colors.background.input,
-    borderRadius: '12px',
+    alignItems: 'flex-start',
   },
   infoIcon: {
-    fontSize: '2rem',
-  },
-  infoContent: {
-    flex: 1,
+    fontSize: '1.8rem',
   },
   infoLabel: {
     fontSize: '0.85rem',
-    color: colors.text.secondary,
-    marginBottom: '4px',
+    color: '#999999',
+    marginBottom: '5px',
   },
   infoValue: {
     fontSize: '1.1rem',
     fontWeight: '600',
-    color: colors.text.primary,
+    color: '#191919',
   },
-  statusCard: {
+  myStatusCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: '24px',
     padding: '30px',
+    border: '3px solid #FFDD2D',
+    boxShadow: '0 4px 20px rgba(255, 221, 45, 0.2)',
   },
-  statusHeader: {
-    textAlign: 'center',
+  myStatusHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
     marginBottom: '25px',
   },
-  statusBadge: {
-    display: 'inline-block',
-    padding: '10px 20px',
-    borderRadius: '25px',
-    fontSize: '1rem',
+  myStatusIcon: {
+    fontSize: '1.5rem',
+  },
+  myStatusTitle: {
+    fontSize: '1.2rem',
     fontWeight: '600',
-    color: 'white',
+    color: '#191919',
   },
-  positionCircle: {
+  positionDisplay: {
     textAlign: 'center',
-    marginBottom: '25px',
+    padding: '25px',
+    backgroundColor: '#F5F5F5',
+    borderRadius: '16px',
+    marginBottom: '20px',
   },
   positionLabel: {
-    fontSize: '1rem',
-    color: colors.text.secondary,
+    fontSize: '0.9rem',
+    color: '#666666',
     marginBottom: '10px',
   },
   positionNumber: {
-    fontSize: '5rem',
-    fontWeight: '700',
-    background: colors.primary.gradient,
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
+    fontSize: '3.5rem',
+    fontWeight: '800',
+    color: '#191919',
     lineHeight: '1',
   },
-  estimateBox: {
+  waitTimeDisplay: {
     display: 'flex',
     alignItems: 'center',
-    gap: '15px',
-    padding: '20px',
-    backgroundColor: colors.background.input,
+    gap: '10px',
+    padding: '15px',
+    backgroundColor: '#FFF9E6',
     borderRadius: '12px',
-    marginBottom: '25px',
+    marginBottom: '20px',
+    fontSize: '0.95rem',
+    color: '#191919',
   },
-  estimateIcon: {
-    fontSize: '2.5rem',
+  waitTimeIcon: {
+    fontSize: '1.3rem',
   },
-  estimateLabel: {
-    fontSize: '0.9rem',
-    color: colors.text.secondary,
-    marginBottom: '5px',
+  waitTimeText: {},
+  statusDisplay: {
+    display: 'flex',
+    gap: '10px',
+    marginBottom: '20px',
+    flexWrap: 'wrap',
   },
-  estimateValue: {
-    fontSize: '1.4rem',
+  statusChip: {
+    padding: '8px 16px',
+    borderRadius: '100px',
+    fontSize: '0.85rem',
     fontWeight: '600',
-    color: colors.text.primary,
+    color: '#FFFFFF',
   },
-  statusActions: {
+  actionButtons: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '12px',
+    gap: '10px',
   },
   joinCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: '24px',
     padding: '35px',
+    border: '1px solid #E0E0E0',
     textAlign: 'center',
-    background: `linear-gradient(135deg, ${colors.primary.dark}22 0%, ${colors.primary.main}22 100%)`,
-    border: `2px solid ${colors.primary.main}`,
   },
-  joinTitle: {
-    fontSize: '1.6rem',
-    fontWeight: '600',
-    color: colors.info.main,
-    marginBottom: '15px',
-  },
-  joinText: {
-    fontSize: '1.05rem',
-    color: colors.text.secondary,
-    lineHeight: '1.6',
-    marginBottom: '25px',
-  },
-  loginHint: {
-    marginTop: '15px',
-    fontSize: '0.95rem',
-    color: colors.text.secondary,
-  },
-  loginLink: {
-    color: colors.info.main,
-    textDecoration: 'underline',
-  },
-  errorMessage: {
-    textAlign: 'center',
-    color: 'white',
-    fontSize: '1.1rem',
-  },
-  errorContent: {
-    textAlign: 'center',
-    padding: '40px',
-  },
-  errorIcon: {
-    fontSize: '4rem',
+  joinHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '10px',
     marginBottom: '20px',
   },
+  joinIcon: {
+    fontSize: '2rem',
+  },
+  joinTitle: {
+    fontSize: '1.5rem',
+    fontWeight: '600',
+    color: '#191919',
+  },
+  joinText: {
+    fontSize: '1rem',
+    lineHeight: '1.6',
+    color: '#666666',
+    marginBottom: '25px',
+  },
+  fullQueueMessage: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '10px',
+    padding: '15px',
+    backgroundColor: '#FFF3F3',
+    borderRadius: '12px',
+    color: '#C62828',
+    fontWeight: '500',
+  },
+  inactiveMessage: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '10px',
+    padding: '15px',
+    backgroundColor: '#F5F5F5',
+    borderRadius: '12px',
+    color: '#666666',
+    fontWeight: '500',
+  },
   queueCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: '24px',
     padding: '30px',
+    border: '1px solid #E0E0E0',
   },
   queueHeader: {
     display: 'flex',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '25px',
+    gap: '10px',
+    marginBottom: '20px',
+    paddingBottom: '20px',
+    borderBottom: '1px solid #E0E0E0',
   },
-  queueCounter: {
-    padding: '8px 18px',
-    backgroundColor: colors.primary.main,
-    borderRadius: '20px',
-    fontSize: '1.1rem',
+  queueIcon: {
+    fontSize: '1.5rem',
+  },
+  queueTitle: {
+    fontSize: '1.3rem',
     fontWeight: '600',
-    color: 'white',
+    color: '#191919',
   },
   emptyQueue: {
     textAlign: 'center',
-    padding: '60px 20px',
+    padding: '40px 20px',
   },
-  emptyIcon: {
-    fontSize: '5rem',
+  emptyQueueIcon: {
+    fontSize: '3rem',
     marginBottom: '15px',
   },
-  emptyTitle: {
-    fontSize: '1.3rem',
-    color: colors.text.primary,
-    marginBottom: '8px',
-  },
-  emptyText: {
+  emptyQueueText: {
     fontSize: '1rem',
-    color: colors.text.secondary,
+    color: '#666666',
   },
   queueList: {
     display: 'flex',
@@ -664,90 +722,107 @@ const styles = {
     gap: '12px',
   },
   queueItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '15px',
     padding: '18px',
-    backgroundColor: colors.background.input,
-    borderRadius: '12px',
-    border: `2px solid transparent`,
+    borderRadius: '16px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     transition: 'all 0.3s ease',
   },
-  queueItemMe: {
-    backgroundColor: `${colors.success.main}15`,
-    border: `2px solid ${colors.success.main}`,
-  },
-  queueItemPaused: {
-    opacity: 0.5,
-  },
-  queueRank: {
-    minWidth: '50px',
-    textAlign: 'center',
-  },
-  queueMedal: {
-    fontSize: '2rem',
-  },
-  queueNumber: {
-    fontSize: '1.5rem',
-    fontWeight: '700',
-    color: colors.primary.main,
-  },
-  queueUserInfo: {
-    flex: 1,
-  },
-  queueUserName: {
-    fontSize: '1.1rem',
-    fontWeight: '600',
-    color: colors.text.primary,
-    marginBottom: '5px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-  },
-  youBadge: {
-    fontSize: '0.7rem',
-    padding: '3px 10px',
-    backgroundColor: colors.success.main,
-    borderRadius: '10px',
-    fontWeight: '600',
-    color: 'white',
-  },
-  queueUserMeta: {
-    display: 'flex',
-    gap: '10px',
-    alignItems: 'center',
-    fontSize: '0.9rem',
-    color: colors.text.secondary,
-  },
-  pauseBadge: {
-    padding: '3px 8px',
-    backgroundColor: colors.warning.main,
-    borderRadius: '10px',
-    fontSize: '0.8rem',
-    fontWeight: '600',
-    color: 'white',
-  },
-  queueTime: {
-    color: colors.text.secondary,
-  },
-  queueMore: {
-    textAlign: 'center',
-    padding: '15px',
-    color: colors.text.secondary,
-    fontSize: '0.95rem',
-    fontStyle: 'italic',
-  },
-  chatWrapper: {
-    position: 'sticky',
-    top: '20px',
-  },
-  bottomNav: {
+  queueItemLeft: {
     display: 'flex',
     gap: '15px',
+    alignItems: 'center',
+    flex: 1,
+  },
+  queuePosition: {
+    fontSize: '1.3rem',
+    fontWeight: '700',
+    color: '#191919',
+    minWidth: '45px',
+  },
+  queueUserName: {
+    fontSize: '1rem',
+    fontWeight: '600',
+    color: '#191919',
+    marginBottom: '4px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  youBadge: {
+    fontSize: '0.75rem',
+    fontWeight: '600',
+    padding: '3px 10px',
+    backgroundColor: '#FFDD2D',
+    color: '#191919',
+    borderRadius: '100px',
+  },
+  queueUserStatus: {
+    fontSize: '0.85rem',
+    color: '#666666',
+  },
+  moreItems: {
+    textAlign: 'center',
+    padding: '15px',
+    fontSize: '0.9rem',
+    color: '#999999',
+  },
+  loading: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    padding: '100px 20px',
+    color: '#666666',
+  },
+  spinner: {
+    width: '50px',
+    height: '50px',
+    border: '4px solid #E0E0E0',
+    borderTop: '4px solid #FFDD2D',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite',
+    marginBottom: '20px',
+  },
+  errorContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
     justifyContent: 'center',
-    padding: '40px',
-    borderTop: `1px solid ${colors.divider}`,
+    padding: '100px 40px',
+    gap: '30px',
+  },
+  errorBox: {
+    backgroundColor: '#FFF3F3',
+    border: '3px solid #F44336',
+    borderRadius: '30px',
+    padding: '30px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '15px',
+    color: '#C62828',
+    fontSize: '1rem',
+  },
+  errorIcon: {
+    fontSize: '2rem',
   },
 };
+
+// Добавляем CSS анимации безопасным способом
+const addKeyframes = () => {
+  const styleId = 'event-detail-keyframes';
+  if (document.getElementById(styleId)) return;
+  
+  const style = document.createElement('style');
+  style.id = styleId;
+  style.textContent = `
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  `;
+  document.head.appendChild(style);
+};
+addKeyframes();
 
 export default EventDetailPage;

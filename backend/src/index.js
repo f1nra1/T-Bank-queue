@@ -1,126 +1,81 @@
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
+const bodyParser = require('body-parser');
 const http = require('http');
-const { Server } = require('socket.io');
-const db = require('./config/database'); // Добавили подключение к БД
-
-// Загружаем переменные окружения
-dotenv.config();
+const socketIo = require('socket.io');
+require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
 
-// Настройка Socket.IO
-const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST'],
-  },
+// CORS настройки - ВАЖНО!
+const corsOptions = {
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Socket.IO с CORS
+const io = socketIo(server, {
+  cors: corsOptions,
 });
 
-// Middleware - CORS должен быть ПЕРВЫМ!
-app.use(cors({
-  origin: '*',
-  credentials: true,
-}));
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Логирование всех запросов
+// Middleware для логирования
 app.use((req, res, next) => {
   console.log(`📨 ${req.method} ${req.path}`);
   next();
 });
 
-// Базовый роут для проверки
-app.get('/', (req, res) => {
-  console.log('✅ Получен запрос на /');
-  res.json({
-    message: '🎯 Queue Management System API',
-    status: 'running',
-    version: '1.0.0',
-    database: 'SQLite',
-  });
-});
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  console.log('✅ Получен запрос на /api/health');
-  res.json({
-    status: 'OK',
-    message: 'Server is healthy',
-    timestamp: new Date().toISOString(),
-    database: 'connected',
-  });
-});
-
-// Подключаем роуты
+// Маршруты
 const authRoutes = require('./routes/authRoutes');
-
-// Роуты авторизации
-app.use('/api/auth', authRoutes);
-
-// Роуты событий
 const eventRoutes = require('./routes/eventRoutes');
-app.use('/api/events', eventRoutes);
-
-// Роуты очередей
 const queueRoutes = require('./routes/queueRoutes');
-app.use('/api/queue', queueRoutes);
-
-// Роуты сообщений
-const messageRoutes = require('./routes/messageRoutes');
-app.use('/api/messages', messageRoutes);
-
-// Роуты админа
 const adminRoutes = require('./routes/adminRoutes');
+
+app.use('/api/auth', authRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/queue', queueRoutes);
 app.use('/api/admin', adminRoutes);
 
-// WebSocket подключения
+// Базовый маршрут
+app.get('/', (req, res) => {
+  res.json({ message: 'T-Bank Queue API' });
+});
+
+// WebSocket обработчики
 io.on('connection', (socket) => {
-  console.log('✅ Новый клиент подключен:', socket.id);
+  console.log('🔌 Новое подключение:', socket.id);
+
+  socket.on('join-event', (eventId) => {
+    socket.join(`event-${eventId}`);
+    console.log(`👤 Пользователь присоединился к событию ${eventId}`);
+  });
+
+  socket.on('leave-event', (eventId) => {
+    socket.leave(`event-${eventId}`);
+    console.log(`👤 Пользователь покинул событие ${eventId}`);
+  });
 
   socket.on('disconnect', () => {
-    console.log('❌ Клиент отключен:', socket.id);
-  });
-
-  socket.on('test', (data) => {
-    console.log('📨 Получено сообщение:', data);
-    socket.emit('test-response', { message: 'Сервер получил ваше сообщение!' });
+    console.log('🔌 Отключение:', socket.id);
   });
 });
 
-// Сохраняем io в app
+// Экспортируем io для использования в других модулях
 app.set('io', io);
 
-// 404 handler
-app.use((req, res) => {
-  console.log('❌ 404:', req.path);
-  res.status(404).json({
-    error: 'Route not found',
-    path: req.path,
-  });
-});
-
-// Error handler
+// Обработка ошибок
 app.use((err, req, res, next) => {
   console.error('❌ Ошибка:', err);
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal server error',
-  });
+  res.status(500).json({ error: 'Внутренняя ошибка сервера' });
 });
 
-// Запуск сервера
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log('\n🚀 ========================================');
-  console.log(`✅ Server running on port ${PORT}`);
-  console.log(`🌐 API: http://localhost:${PORT}`);
-  console.log(`🌐 Health: http://localhost:${PORT}/api/health`);
-  console.log(`🔌 WebSocket ready`);
-  console.log(`💾 Database: SQLite initialized`);
-  console.log('🚀 ========================================\n');
+  console.log(`🚀 Сервер запущен на порту ${PORT}`);
 });

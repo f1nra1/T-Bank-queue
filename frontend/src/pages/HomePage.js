@@ -1,457 +1,420 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import Button from '../components/common/Button';
-import { colors } from '../styles/theme';
-
+import './HomePage.css';
 
 function HomePage() {
+  const [theme, setTheme] = useState('dark');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const bankcardRef = useRef(null);
+  const bankcardInnerRef = useRef(null);
+
+  // Инициализация темы
+  useEffect(() => {
+    const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+    const savedTheme = localStorage.getItem('tbank-theme') || (prefersLight ? 'light' : 'dark');
+    setTheme(savedTheme);
+    applyTheme(savedTheme);
+  }, []);
+
+  // Применение темы
+  const applyTheme = (themeName) => {
+    document.documentElement.setAttribute('data-theme', themeName);
+    document.body.setAttribute('data-theme', themeName);
+    
+    // Устанавливаем цвет фона напрямую
+    if (themeName === 'light') {
+      document.body.style.backgroundColor = '#ffffff';
+      document.documentElement.style.backgroundColor = '#ffffff';
+    } else {
+      document.body.style.backgroundColor = '#0B0F17';
+      document.documentElement.style.backgroundColor = '#0B0F17';
+    }
+  };
+
+  // 3D анимация карты
+  useEffect(() => {
+    const inner = bankcardInnerRef.current;
+    const card = bankcardRef.current;
+    if (!inner || !card) return;
+
+    const MIN = 0;
+    const MAX = 180;
+    const SNAP_THRESHOLD = 90;
+    const lerpK = 0.12;
+
+    let target = 0;
+    let angle = 0;
+    const dragSpeed = 0.22;
+    const wheelSpeed = 0.18;
+
+    let dragging = false;
+    let lastX = 0;
+    let animationId;
+
+    const clamp = v => Math.min(MAX, Math.max(MIN, v));
+
+    function apply() {
+      inner.style.transform = `rotateY(${angle}deg)`;
+      card.dataset.side = (angle >= SNAP_THRESHOLD) ? 'back' : 'front';
+    }
+
+    function tick() {
+      angle += (target - angle) * lerpK;
+      apply();
+      animationId = requestAnimationFrame(tick);
+    }
+
+    const handlePointerDown = (e) => {
+      dragging = true;
+      lastX = e.clientX;
+      card.classList.add('dragging');
+      card.setPointerCapture?.(e.pointerId);
+    };
+
+    const handlePointerMove = (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - lastX;
+      lastX = e.clientX;
+      target = clamp(target + dx * dragSpeed);
+    };
+
+    const endDrag = (e) => {
+      if (!dragging) return;
+      dragging = false;
+      card.classList.remove('dragging');
+      card.releasePointerCapture?.(e.pointerId);
+      target = (angle >= SNAP_THRESHOLD) ? MAX : MIN;
+    };
+
+    const handleWheel = (e) => {
+      e.preventDefault();
+      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      target = clamp(target + delta * wheelSpeed);
+    };
+
+    card.addEventListener('pointerdown', handlePointerDown);
+    card.addEventListener('pointermove', handlePointerMove);
+    card.addEventListener('pointerup', endDrag);
+    card.addEventListener('pointercancel', endDrag);
+    card.addEventListener('mouseleave', () => { dragging = false; });
+    card.addEventListener('wheel', handleWheel, { passive: false });
+
+    apply();
+    animationId = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(animationId);
+      card.removeEventListener('pointerdown', handlePointerDown);
+      card.removeEventListener('pointermove', handlePointerMove);
+      card.removeEventListener('pointerup', endDrag);
+      card.removeEventListener('pointercancel', endDrag);
+      card.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
+
+  const currentYear = new Date().getFullYear();
+
   return (
-    <div style={styles.container}>
-      {/* Navigation */}
-      <nav style={styles.nav}>
-        <div style={styles.navContent}>
-          <div style={styles.logo}>
-            <span style={styles.logoIcon}>⚡</span>
-            <span style={styles.logoText}>QueueFlow</span>
-          </div>
-          <div style={styles.navLinks}>
-            <Link to="/events" style={styles.navLink}>События</Link>
-            <Link to="/login" style={styles.navLink}>Войти</Link>
-            <Link to="/register" style={{ textDecoration: 'none' }}>
-              <Button variant="primary" size="small">Регистрация</Button>
+    <div className="homepage">
+      <a href="#main" className="sr-only">Перейти к основному содержанию</a>
+
+      {/* Header */}
+      <header className="header" role="banner">
+        <div className="container nav" aria-label="Основная навигация">
+          <div className="nav__left">
+            <Link to="/" className="logo" aria-label="T‑Bank — на главную">
+              <span className="logo__mark" aria-hidden="true">T</span>
+              <span>T‑Bank Queue</span>
             </Link>
+            <nav className="menu" aria-label="Разделы сайта">
+              <Link to="/events">Мероприятия</Link>
+              <a href="#about">О нас</a>
+            </nav>
+          </div>
+          <div className="nav__cta">
+            <Link to="/login" className="btn outline">Войти</Link>
+            <Link to="/register" className="btn">Регистрация</Link>
+            <button 
+              className="burger btn outline" 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobileMenu"
+            >
+              Меню
+            </button>
           </div>
         </div>
-      </nav>
+        {mobileMenuOpen && (
+          <nav id="mobileMenu" className="container">
+            <div className="card" style={{padding: '12px', marginBottom: '12px'}}>
+              <Link to="/events">Мероприятия</Link> ·
+              <a href="#about">О нас</a> ·
+              <Link to="/login">Войти</Link> ·
+              <Link to="/register">Регистрация</Link>
+            </div>
+          </nav>
+        )}
+      </header>
 
       {/* Hero Section */}
-      <section style={styles.hero}>
-        <div style={styles.heroContent}>
-          <h1 style={styles.heroTitle}>
-            Электронная очередь для мероприятий
-          </h1>
-          <p style={styles.heroSubtitle}>
-            Встаньте в очередь онлайн. Экономьте время. 
-            Получайте уведомления в режиме реального времени.
-          </p>
-          <div style={styles.heroButtons}>
-            <Link to="/events" style={{ textDecoration: 'none' }}>
-              <Button variant="primary" size="large">
-                Смотреть события
-              </Button>
-            </Link>
-            <Link to="/register" style={{ textDecoration: 'none' }}>
-              <Button variant="outline" size="large">
-                Начать бесплатно
-              </Button>
-            </Link>
+      <section className="hero" id="top">
+        <div className="container hero__inner">
+          <div>
+            <div className="eyebrow">Мы уважаем наших клиентов.</div>
+            <h1 className="h1">T‑Bank Queue — электронная очередь для мероприятий.</h1>
+            <p className="lead">Каждый участник знает своё место в очереди, а организаторы — кто следующий.</p>
+            <div className="hero__actions">
+              <Link to="/events" className="btn">Смотреть мероприятия</Link>
+            </div>
+          </div>
+          <div className="card shadow bankcard-wrap" aria-label="Визуализация карты T‑Bank" style={{padding: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center'}}>
+            <div className="bankcard" ref={bankcardRef} aria-label="Банковская карта T‑Bank" data-side="front">
+              <div className="bankcard__inner" ref={bankcardInnerRef}>
+                {/* FRONT */}
+                <div className="bankcard__face bankcard__front" aria-hidden="false">
+                  <svg viewBox="0 0 856 540" width="100%" height="auto" role="img" aria-label="Лицевая сторона карты T‑Bank">
+                    <defs>
+                      <linearGradient id="bggrad" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stopColor="#0E1524"/>
+                        <stop offset="100%" stopColor="#0B0F17"/>
+                      </linearGradient>
+                      <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#E6D79B"/>
+                        <stop offset="100%" stopColor="#B8923A"/>
+                      </linearGradient>
+                      <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="rgba(255,255,255,.18)"/>
+                        <stop offset="60%" stopColor="rgba(255,255,255,0)"/>
+                      </linearGradient>
+                    </defs>
+                    <rect x="6" y="6" width="844" height="528" rx="28" fill="url(#bggrad)"/>
+                    <rect x="6" y="6" width="844" height="528" rx="28" fill="none" stroke="url(#gold)" strokeWidth="2"/>
+                    <rect x="6" y="6" width="844" height="528" rx="28" fill="url(#sheen)" opacity="0.25"/>
+                    {/* Logo coin */}
+                    <g transform="translate(40,38)">
+                      <rect width="76" height="76" rx="18" fill="url(#gold)" />
+                      <text x="38" y="50" textAnchor="middle" fontFamily="Spectral,Georgia,serif" fontSize="38" fill="#0B0F17" fontWeight="800">T</text>
+                    </g>
+                    {/* Chip */}
+                    <g transform="translate(40,160)" opacity="0.9">
+                      <rect width="92" height="68" rx="10" fill="#1b2333" stroke="#2b3343"/>
+                      <g stroke="#4b5466" strokeWidth="2">
+                        <path d="M10 20H82"/>
+                        <path d="M10 34H82"/>
+                        <path d="M10 48H82"/>
+                        <path d="M30 10V58"/>
+                        <path d="M62 10V58"/>
+                      </g>
+                    </g>
+                    {/* Number */}
+                    <g transform="translate(40,300)" fill="#E6E9EE">
+                      <text fontSize="34" fontFamily="Inter,system-ui" letterSpacing="4">•••• •••• •••• 8899</text>
+                    </g>
+                    {/* Holder */}
+                    <g transform="translate(40,360)" fill="#9AA6B2">
+                      <text fontSize="16" fontFamily="Inter,system-ui" opacity=".9">CARDHOLDER</text>
+                      <text y="26" fontSize="20" fontFamily="Inter,system-ui" fill="#E6E9EE">PRIVATE CLIENT</text>
+                    </g>
+                    {/* Tier & brand */}
+                    <g transform="translate(640,420)" textAnchor="end">
+                      <text fontSize="18" fontFamily="Inter,system-ui" fill="#9AA6B2">T‑Bank •</text>
+                      <text x="0" y="28" fontSize="20" fontFamily="Inter,system-ui" fill="url(#gold)">SOVEREIGN</text>
+                    </g>
+                  </svg>
+                </div>
+                {/* BACK */}
+                <div className="bankcard__face bankcard__back" aria-hidden="true">
+                  <svg viewBox="0 0 856 540" width="100%" height="auto" role="img" aria-label="Оборотная сторона карты T‑Bank">
+                    <defs>
+                      <linearGradient id="bggrad2" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stopColor="#0E1524"/>
+                        <stop offset="100%" stopColor="#0B0F17"/>
+                      </linearGradient>
+                      <linearGradient id="gold2" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#E6D79B"/>
+                        <stop offset="100%" stopColor="#B8923A"/>
+                      </linearGradient>
+                    </defs>
+                    <rect x="6" y="6" width="844" height="528" rx="28" fill="url(#bggrad2)"/>
+                    <rect x="6" y="6" width="844" height="528" rx="28" fill="none" stroke="url(#gold2)" strokeWidth="2"/>
+                    {/* Mag stripe */}
+                    <rect x="30" y="80" width="796" height="72" rx="10" fill="#0b0f17" opacity=".9"/>
+                    {/* Signature panel */}
+                    <rect x="520" y="200" width="286" height="56" rx="8" fill="#e6e9ee" opacity=".9"/>
+                    <text x="540" y="236" fontSize="20" fontFamily="Inter,system-ui" fill="#0B0F17">CVV •••</text>
+                    {/* Info lines */}
+                    <g transform="translate(40,300)" opacity=".8">
+                      <rect width="600" height="14" rx="6" fill="#1b2333"/>
+                      <rect y="28" width="560" height="14" rx="6" fill="#1b2333"/>
+                      <rect y="56" width="520" height="14" rx="6" fill="#1b2333"/>
+                    </g>
+                  </svg>
+                  <div className="bankcard__caption">Конфиденциальность в приоритете.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section id="about">
+        <div className="container about-wrap">
+          <div className="section__head about-grid">
+            <article className="about-card card" style={{padding: '24px'}}>
+              <p className="about-lead" style={{fontSize: '1.2rem', fontWeight: '600', marginBottom: '16px'}}>
+                T-Bank — пространство роста и новых возможностей.
+              </p>
+              <p style={{color: 'var(--muted)', marginBottom: '12px'}}>
+                Наши мероприятия создают условия для безопасного общения, расширения кругозора и получения практических навыков.
+              </p>
+              <p style={{color: 'var(--muted)'}}>
+                Каждая активность помогает участникам развиваться, находить инсайты и укреплять уверенность в собственных решениях.
+              </p>
+            </article>
+
+            <aside className="about-card about-legal card" style={{padding: '24px'}}>
+              <h3 className="about-title" style={{marginBottom: '16px'}}>Официальная информация</h3>
+              <ul className="about-list" style={{listStyle: 'none', padding: 0, margin: 0}}>
+                <li style={{marginBottom: '8px'}}><strong>Формат:</strong> Образовательные и практические мероприятия.</li>
+                <li style={{marginBottom: '8px'}}><strong>Цель:</strong> Развитие навыков и обмен опытом.</li>
+                <li style={{marginBottom: '8px'}}><strong>Контроль качества:</strong> Программы регулярно обновляются.</li>
+                <li style={{marginBottom: '8px'}}><strong>Поддержка:</strong> Участникам доступна консультационная помощь.</li>
+                <li><strong>Данные:</strong> Используются только для организации участия.</li>
+              </ul>
+            </aside>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section style={styles.features}>
-        <div style={styles.featuresContent}>
-          <h2 style={styles.featuresTitle}>Всё что нужно для управления очередями</h2>
-          
-          <div style={styles.featuresList}>
-            <div style={styles.featureItem}>
-              <div style={styles.featureIcon}>🔄</div>
-              <div style={styles.featureText}>
-                <h3 style={styles.featureTitle}>Real-time обновления</h3>
-                <p style={styles.featureDescription}>
-                  Мгновенное обновление позиции через WebSocket
-                </p>
-              </div>
-            </div>
-
-            <div style={styles.featureItem}>
-              <div style={styles.featureIcon}>💬</div>
-              <div style={styles.featureText}>
-                <h3 style={styles.featureTitle}>Встроенный чат</h3>
-                <p style={styles.featureDescription}>
-                  Общайтесь с участниками события в реальном времени
-                </p>
-              </div>
-            </div>
-
-            <div style={styles.featureItem}>
-              <div style={styles.featureIcon}>⏸️</div>
-              <div style={styles.featureText}>
-                <h3 style={styles.featureTitle}>Умная пауза</h3>
-                <p style={styles.featureDescription}>
-                  Временно покиньте очередь без потери места
-                </p>
-              </div>
-            </div>
-
-            <div style={styles.featureItem}>
-              <div style={styles.featureIcon}>📊</div>
-              <div style={styles.featureText}>
-                <h3 style={styles.featureTitle}>Точный расчёт времени</h3>
-                <p style={styles.featureDescription}>
-                  Автоматический подсчёт времени ожидания
-                </p>
-              </div>
+      <section id="features">
+        <div className="container">
+          <div className="section__head">
+            <div>
+              <h2 className="section__title">Мероприятия от T‑Bank</h2>
+              <p className="section__desc">Выберите активность, на которую можно записаться по электронной очереди.</p>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* How it works */}
-      <section style={styles.howItWorks}>
-        <div style={styles.howItWorksContent}>
-          <h2 style={styles.howItWorksTitle}>Как это работает</h2>
-          
-          <div style={styles.steps}>
-            <div style={styles.step}>
-              <div style={styles.stepNumber}>1</div>
-              <h3 style={styles.stepTitle}>Зарегистрируйтесь</h3>
-              <p style={styles.stepDescription}>
-                Создайте бесплатный аккаунт за 30 секунд
-              </p>
-            </div>
+          <div className="grid features">
+            <Link to="/events" className="card feature">
+              <div className="feature__icon" aria-hidden="true">
+                <svg className="fi" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8 10h8"/></svg>
+              </div>
+              <div>
+                <h3 className="feature__title">VR‑зона «Будущее Финтеха»</h3>
+                <p>Иммерсивный опыт и демонстрация технологий T‑Bank.</p>
+              </div>
+            </Link>
 
-            <div style={styles.stepArrow}>→</div>
+            <Link to="/events" className="card feature">
+              <div className="feature__icon" aria-hidden="true">
+                <svg className="fi" viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg>
+              </div>
+              <div>
+                <h3 className="feature__title">Консультации по инвестициям</h3>
+                <p>Эксперты банка отвечают на ваши вопросы.</p>
+              </div>
+            </Link>
 
-            <div style={styles.step}>
-              <div style={styles.stepNumber}>2</div>
-              <h3 style={styles.stepTitle}>Выберите событие</h3>
-              <p style={styles.stepDescription}>
-                Найдите интересующее мероприятие
-              </p>
-            </div>
+            <Link to="/events" className="card feature">
+              <div className="feature__icon" aria-hidden="true">
+                <svg className="fi" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>
+              </div>
+              <div>
+                <h3 className="feature__title">Зона «Искусственный интеллект»</h3>
+                <p>Презентация алгоритмов T‑Bank и их применения.</p>
+              </div>
+            </Link>
 
-            <div style={styles.stepArrow}>→</div>
+            <Link to="/events" className="card feature">
+              <div className="feature__icon" aria-hidden="true">
+                <svg className="fi" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M4 10h16"/></svg>
+              </div>
+              <div>
+                <h3 className="feature__title">Оформление карт T‑Bank</h3>
+                <p>Операторы оформят карту прямо на мероприятии.</p>
+              </div>
+            </Link>
 
-            <div style={styles.step}>
-              <div style={styles.stepNumber}>3</div>
-              <h3 style={styles.stepTitle}>Встаньте в очередь</h3>
-              <p style={styles.stepDescription}>
-                Займите место одним кликом
-              </p>
-            </div>
+            <Link to="/events" className="card feature">
+              <div className="feature__icon" aria-hidden="true">
+                <svg className="fi" viewBox="0 0 24 24"><path d="M5 20v-8l7-4 7 4v8"/><path d="M9 12v8"/></svg>
+              </div>
+              <div>
+                <h3 className="feature__title">Питч‑сессия стартапов</h3>
+                <p>Выступления команд и консультации инвесторов.</p>
+              </div>
+            </Link>
 
-            <div style={styles.stepArrow}>→</div>
-
-            <div style={styles.step}>
-              <div style={styles.stepNumber}>4</div>
-              <h3 style={styles.stepTitle}>Получите уведомление</h3>
-              <p style={styles.stepDescription}>
-                Узнайте, когда подойдёт очередь
-              </p>
-            </div>
+            <Link to="/events" className="card feature">
+              <div className="feature__icon" aria-hidden="true">
+                <svg className="fi" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              </div>
+              <div>
+                <h3 className="feature__title">Игровая зона T‑Bank</h3>
+                <p>Геймифицированные активности с призами.</p>
+              </div>
+            </Link>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section style={styles.cta}>
-        <div style={styles.ctaContent}>
-          <h2 style={styles.ctaTitle}>Готовы начать?</h2>
-          <p style={styles.ctaSubtitle}>
-            Присоединяйтесь к тысячам пользователей, которые экономят время
+      <section id="cta" className="cta-section">
+        <div className="container" style={{textAlign: 'center', padding: '60px 20px'}}>
+          <h2 className="section__title">Готовы начать?</h2>
+          <p className="section__desc" style={{maxWidth: '600px', margin: '0 auto 30px'}}>
+            Зарегистрируйтесь бесплатно и встаньте в электронную очередь на любое мероприятие T‑Bank
           </p>
-          <Link to="/register" style={{ textDecoration: 'none' }}>
-            <Button variant="primary" size="large">
-              Зарегистрироваться бесплатно
-            </Button>
-          </Link>
+          <div style={{display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap'}}>
+            <Link to="/register" className="btn">Зарегистрироваться</Link>
+            <Link to="/events" className="btn outline">Смотреть мероприятия</Link>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer style={styles.footer}>
-        <div style={styles.footerContent}>
-          <div style={styles.footerLeft}>
-            <div style={styles.footerLogo}>
-              <span style={styles.footerLogoIcon}>⚡</span>
-              <span style={styles.footerLogoText}>QueueFlow</span>
+      <footer id="legal" aria-labelledby="footerTitle">
+        <div className="container footer">
+          <h2 id="footerTitle" className="sr-only">Навигация и контакты T‑Bank</h2>
+          <div className="footer__grid">
+            <div className="footer__brand">
+              <Link to="/" className="logo" aria-label="T‑Bank — на главную">
+                <span className="logo__mark" aria-hidden="true">T</span>
+                <span>T‑Bank Queue</span>
+              </Link>
+              <p className="footer__copy">© {currentYear} T‑Bank. Сервис для деловых клиентов.</p>
             </div>
-            <p style={styles.footerTagline}>
-              Электронная очередь нового поколения
-            </p>
+            <nav className="footer__col" aria-label="Разделы">
+              <div className="footer__title">Разделы</div>
+              <ul className="footer__links">
+                <li><Link to="/events">Мероприятия</Link></li>
+                <li><a href="#about">О нас</a></li>
+                <li><Link to="/my-queues">Мои очереди</Link></li>
+              </ul>
+            </nav>
+            <nav className="footer__col" aria-label="Аккаунт">
+              <div className="footer__title">Аккаунт</div>
+              <ul className="footer__links">
+                <li><Link to="/login">Войти</Link></li>
+                <li><Link to="/register">Регистрация</Link></li>
+                <li><Link to="/admin">Админка</Link></li>
+              </ul>
+            </nav>
+            <nav className="footer__col" aria-label="Контакты">
+              <div className="footer__title">Контакты</div>
+              <ul className="footer__links">
+                <li><a href="https://instagram.com/tbank" target="_blank" rel="noopener noreferrer">Instagram T‑Bank</a></li>
+                <li><a href="mailto:support@tbank.ru">support@tbank.ru</a></li>
+              </ul>
+            </nav>
           </div>
-          <div style={styles.footerRight}>
-            <Link to="/events" style={styles.footerLink}>События</Link>
-            <Link to="/login" style={styles.footerLink}>Войти</Link>
-            <Link to="/register" style={styles.footerLink}>Регистрация</Link>
-            <Link to="/admin" style={styles.footerLink}>Админка</Link>
-          </div>
-        </div>
-        <div style={styles.footerBottom}>
-          <p style={styles.copyright}>
-            © 2025 QueueFlow. Создано для хакатона Т-Банк × НГТУ
-          </p>
         </div>
       </footer>
     </div>
   );
 }
-
-const styles = {
-  container: {
-    minHeight: '100vh',
-    backgroundColor: '#FFFFFF',
-    color: '#191919',
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  },
-  
-  // Navigation
-  nav: {
-    borderBottom: '1px solid #E0E0E0',
-    position: 'sticky',
-    top: 0,
-    backgroundColor: '#FFFFFF',
-    zIndex: 100,
-  },
-  navContent: {
-    maxWidth: '1400px',
-    margin: '0 auto',
-    padding: '20px 40px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  logo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    fontSize: '1.5rem',
-    fontWeight: '700',
-    color: '#191919',
-  },
-  logoIcon: {
-    fontSize: '2rem',
-  },
-  logoText: {
-    letterSpacing: '-0.02em',
-  },
-  navLinks: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '30px',
-  },
-  navLink: {
-    color: '#191919',
-    textDecoration: 'none',
-    fontSize: '1rem',
-    fontWeight: '500',
-    transition: 'color 0.3s',
-  },
-  
-  // Hero
-  hero: {
-    padding: '120px 40px',
-    maxWidth: '1400px',
-    margin: '0 auto',
-  },
-  heroContent: {
-    maxWidth: '800px',
-  },
-  heroTitle: {
-    fontSize: '5rem',
-    fontWeight: '800',
-    lineHeight: '1.1',
-    marginBottom: '30px',
-    color: '#191919',
-    letterSpacing: '-0.03em',
-  },
-  heroSubtitle: {
-    fontSize: '1.5rem',
-    lineHeight: '1.6',
-    color: '#666666',
-    marginBottom: '50px',
-    maxWidth: '600px',
-  },
-  heroButtons: {
-    display: 'flex',
-    gap: '20px',
-    flexWrap: 'wrap',
-  },
-  
-  // Features
-  features: {
-    padding: '100px 40px',
-    backgroundColor: '#F9F9F9',
-  },
-  featuresContent: {
-    maxWidth: '1400px',
-    margin: '0 auto',
-  },
-  featuresTitle: {
-    fontSize: '3rem',
-    fontWeight: '700',
-    marginBottom: '60px',
-    color: '#191919',
-    letterSpacing: '-0.02em',
-  },
-  featuresList: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-    gap: '40px',
-  },
-  featureItem: {
-    display: 'flex',
-    gap: '20px',
-  },
-  featureIcon: {
-    fontSize: '3rem',
-    flexShrink: 0,
-  },
-  featureText: {},
-  featureTitle: {
-    fontSize: '1.5rem',
-    fontWeight: '600',
-    marginBottom: '10px',
-    color: '#191919',
-  },
-  featureDescription: {
-    fontSize: '1.1rem',
-    lineHeight: '1.6',
-    color: '#666666',
-  },
-  
-  // How it works
-  howItWorks: {
-    padding: '100px 40px',
-  },
-  howItWorksContent: {
-    maxWidth: '1400px',
-    margin: '0 auto',
-  },
-  howItWorksTitle: {
-    fontSize: '3rem',
-    fontWeight: '700',
-    marginBottom: '60px',
-    color: '#191919',
-    letterSpacing: '-0.02em',
-  },
-  steps: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '40px',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-  },
-  step: {
-    flex: '1',
-    minWidth: '200px',
-    maxWidth: '250px',
-  },
-  stepNumber: {
-    width: '60px',
-    height: '60px',
-    borderRadius: '50%',
-    backgroundColor: '#FFDD2D',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '1.8rem',
-    fontWeight: '700',
-    marginBottom: '20px',
-    color: '#191919',
-  },
-  stepArrow: {
-    fontSize: '2rem',
-    color: '#FFDD2D',
-    marginTop: '15px',
-  },
-  stepTitle: {
-    fontSize: '1.3rem',
-    fontWeight: '600',
-    marginBottom: '10px',
-    color: '#191919',
-  },
-  stepDescription: {
-    fontSize: '1rem',
-    lineHeight: '1.6',
-    color: '#666666',
-  },
-  
-  // CTA
-  cta: {
-    padding: '100px 40px',
-    backgroundColor: '#191919',
-  },
-  ctaContent: {
-    maxWidth: '800px',
-    margin: '0 auto',
-    textAlign: 'center',
-  },
-  ctaTitle: {
-    fontSize: '3.5rem',
-    fontWeight: '700',
-    marginBottom: '20px',
-    color: '#FFFFFF',
-    letterSpacing: '-0.02em',
-  },
-  ctaSubtitle: {
-    fontSize: '1.3rem',
-    lineHeight: '1.6',
-    color: '#B0B0B0',
-    marginBottom: '40px',
-  },
-  
-  // Footer
-  footer: {
-    borderTop: '1px solid #E0E0E0',
-    backgroundColor: '#FFFFFF',
-  },
-  footerContent: {
-    maxWidth: '1400px',
-    margin: '0 auto',
-    padding: '60px 40px 40px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: '40px',
-  },
-  footerLeft: {
-    maxWidth: '400px',
-  },
-  footerLogo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    fontSize: '1.5rem',
-    fontWeight: '700',
-    marginBottom: '15px',
-    color: '#191919',
-  },
-  footerLogoIcon: {
-    fontSize: '2rem',
-  },
-  footerLogoText: {
-    letterSpacing: '-0.02em',
-  },
-  footerTagline: {
-    fontSize: '1rem',
-    color: '#666666',
-    lineHeight: '1.6',
-  },
-  footerRight: {
-    display: 'flex',
-    gap: '30px',
-    flexWrap: 'wrap',
-  },
-  footerLink: {
-    color: '#666666',
-    textDecoration: 'none',
-    fontSize: '1rem',
-    transition: 'color 0.3s',
-  },
-  footerBottom: {
-    borderTop: '1px solid #E0E0E0',
-    padding: '30px 40px',
-  },
-  copyright: {
-    textAlign: 'center',
-    fontSize: '0.9rem',
-    color: '#999999',
-    maxWidth: '1400px',
-    margin: '0 auto',
-  },
-};
 
 export default HomePage;

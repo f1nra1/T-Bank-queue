@@ -2,12 +2,11 @@ import api from './api';
 
 const eventService = {
   // Получить все события
-  getAllEvents: async () => {
+  getEvents: async () => {
     try {
-      console.log('📋 Получение всех событий');
       const response = await api.get('/events');
-      console.log('✅ События получены:', response.data.events.length);
-      return response.data.events;
+      console.log('✅ События получены:', response.data);
+      return response.data;
     } catch (error) {
       console.error('❌ Ошибка получения событий:', error);
       throw error.response?.data || { error: 'Ошибка получения событий' };
@@ -15,28 +14,50 @@ const eventService = {
   },
 
   // Получить событие по ID
-  getEventById: async (eventId) => {
+  getEventById: async (id) => {
     try {
-      console.log('🔍 Получение события:', eventId);
-      const response = await api.get(`/events/${eventId}`);
-      console.log('✅ Событие получено:', response.data.event.name);
-      return response.data.event;
+      const response = await api.get(`/events/${id}`);
+      console.log('✅ Событие получено:', response.data);
+      return response.data;
     } catch (error) {
       console.error('❌ Ошибка получения события:', error);
       throw error.response?.data || { error: 'Ошибка получения события' };
     }
   },
 
-  // Создать событие (admin)
+  // Создать событие
   createEvent: async (eventData) => {
     try {
-      console.log('➕ Создание события:', eventData.name);
       const response = await api.post('/events', eventData);
-      console.log('✅ Событие создано');
+      console.log('✅ Событие создано:', response.data);
       return response.data;
     } catch (error) {
       console.error('❌ Ошибка создания события:', error);
       throw error.response?.data || { error: 'Ошибка создания события' };
+    }
+  },
+
+  // Обновить событие
+  updateEvent: async (id, eventData) => {
+    try {
+      const response = await api.put(`/events/${id}`, eventData);
+      console.log('✅ Событие обновлено:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Ошибка обновления события:', error);
+      throw error.response?.data || { error: 'Ошибка обновления события' };
+    }
+  },
+
+  // Удалить событие
+  deleteEvent: async (id) => {
+    try {
+      const response = await api.delete(`/events/${id}`);
+      console.log('✅ Событие удалено');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Ошибка удаления события:', error);
+      throw error.response?.data || { error: 'Ошибка удаления события' };
     }
   },
 };

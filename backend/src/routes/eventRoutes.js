@@ -2,19 +2,19 @@ const express = require('express');
 const router = express.Router();
 const eventController = require('../controllers/eventController');
 
-// GET /api/events - Получить все активные события
-router.get('/', eventController.getAllEvents);
+// Получить все события
+router.get('/', eventController.getEvents);
 
-// GET /api/events/:id - Получить событие по ID
+// Получить событие по ID - ВАЖНО: должен быть ПОСЛЕ '/'
 router.get('/:id', eventController.getEventById);
 
-// POST /api/events - Создать событие (admin)
+// Создать событие
 router.post('/', eventController.createEvent);
 
-// PATCH /api/events/:id - Обновить событие (admin)
-router.patch('/:id', eventController.updateEvent);
+// Обновить событие
+router.put('/:id', eventController.updateEvent);
 
-// DELETE /api/events/:id - Удалить событие (admin)
+// Удалить событие
 router.delete('/:id', eventController.deleteEvent);
 
 module.exports = router;

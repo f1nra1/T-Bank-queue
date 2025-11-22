@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 import Button from '../components/common/Button';
-import Card from '../components/common/Card';
-import { colors, commonStyles } from '../styles/theme';
 
 function LoginPage() {
   const [formData, setFormData] = useState({
@@ -28,11 +26,9 @@ function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await authService.login(formData);
-      console.log('✅ Вход успешен:', response);
+      await authService.login(formData);
       navigate('/events');
     } catch (err) {
-      console.error('❌ Ошибка входа:', err);
       setError(err.error || err.message || 'Ошибка входа');
     } finally {
       setLoading(false);
@@ -41,79 +37,67 @@ function LoginPage() {
 
   return (
     <div style={styles.container}>
-      <div style={styles.content}>
-        {/* Logo/Brand */}
-        <div style={styles.brand}>
-          <div style={styles.logo}>🔐</div>
-          <h1 style={styles.title}>Вход в систему</h1>
-          <p style={styles.subtitle}>Войдите, чтобы управлять очередями</p>
+      {/* Navigation */}
+      <nav style={styles.nav}>
+        <div style={styles.navContent}>
+          <Link to="/" style={styles.logo}>
+            <span style={styles.logoText}>T-Bank Queue</span>
+          </Link>
+          <div style={styles.navLinks}>
+            <Link to="/events" style={styles.navLink}>Мероприятия</Link>
+            <Link to="/register" style={styles.navLink}>Регистрация</Link>
+          </div>
         </div>
+      </nav>
 
-        {/* Login Form */}
-        <Card style={styles.formCard}>
+      {/* Main Content */}
+      <main style={styles.main}>
+        <div style={styles.formContainer}>
+          {/* Header */}
+          <div style={styles.header}>
+            <h1 style={styles.title}>Вход</h1>
+            <p style={styles.subtitle}>
+              Войдите в аккаунт, чтобы управлять очередями
+            </p>
+          </div>
+
+          {/* Error Message */}
           {error && (
-            <div style={styles.errorAlert}>
+            <div style={styles.errorBox}>
               <span style={styles.errorIcon}>⚠️</span>
               <span>{error}</span>
             </div>
           )}
 
+          {/* Form */}
           <form onSubmit={handleSubmit} style={styles.form}>
-            {/* Email Input */}
+            {/* Email */}
             <div style={styles.inputGroup}>
-              <label style={styles.label}>
-                <span style={styles.labelIcon}>📧</span>
-                Email адрес
-              </label>
+              <label style={styles.label}>Email</label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                style={{
-                  ...commonStyles.input,
-                  ...(error ? styles.inputError : {}),
-                }}
-                placeholder="your@email.com"
+                style={styles.input}
+                placeholder="ivan@example.com"
                 required
                 disabled={loading}
-                onFocus={(e) => {
-                  e.target.style.borderColor = colors.primary.main;
-                  e.target.style.boxShadow = `0 0 0 3px ${colors.primary.main}22`;
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = colors.divider;
-                  e.target.style.boxShadow = 'none';
-                }}
               />
             </div>
 
-            {/* Password Input */}
+            {/* Password */}
             <div style={styles.inputGroup}>
-              <label style={styles.label}>
-                <span style={styles.labelIcon}>🔒</span>
-                Пароль
-              </label>
+              <label style={styles.label}>Пароль</label>
               <input
                 type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                style={{
-                  ...commonStyles.input,
-                  ...(error ? styles.inputError : {}),
-                }}
+                style={styles.input}
                 placeholder="Введите пароль"
                 required
                 disabled={loading}
-                onFocus={(e) => {
-                  e.target.style.borderColor = colors.primary.main;
-                  e.target.style.boxShadow = `0 0 0 3px ${colors.primary.main}22`;
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = colors.divider;
-                  e.target.style.boxShadow = 'none';
-                }}
               />
             </div>
 
@@ -122,144 +106,245 @@ function LoginPage() {
               type="submit"
               variant="primary"
               fullWidth
-              disabled={loading}
               size="large"
-              icon={loading ? '⏳' : '🚀'}
+              disabled={loading}
             >
               {loading ? 'Вход...' : 'Войти'}
             </Button>
           </form>
 
-          {/* Links */}
-          <div style={styles.links}>
-            <div style={styles.divider}>
-              <span style={styles.dividerText}>или</span>
-            </div>
-            <Link to="/register" style={{ textDecoration: 'none' }}>
-              <Button variant="outline" fullWidth icon="📝">
-                Создать аккаунт
-              </Button>
-            </Link>
+          {/* Footer Links */}
+          <div style={styles.footer}>
+            <p style={styles.footerText}>
+              Нет аккаунта?{' '}
+              <Link to="/register" style={styles.footerLink}>
+                Зарегистрироваться
+              </Link>
+            </p>
           </div>
-        </Card>
-
-        {/* Back to Home */}
-        <div style={styles.footer}>
-          <Link to="/" style={{ textDecoration: 'none' }}>
-            <Button variant="ghost" icon="←">
-              Вернуться на главную
-            </Button>
-          </Link>
         </div>
-      </div>
+
+        {/* Side Info */}
+        <div style={styles.sideInfo}>
+          <div style={styles.infoCard}>
+            <div style={styles.infoIcon}>⚡</div>
+            <h3 style={styles.infoTitle}>Быстрый вход</h3>
+            <p style={styles.infoText}>
+              Войдите в систему за несколько секунд и начните пользоваться всеми возможностями.
+            </p>
+          </div>
+
+          <div style={styles.infoCard}>
+            <div style={styles.infoIcon}>🔄</div>
+            <h3 style={styles.infoTitle}>Real-time обновления</h3>
+            <p style={styles.infoText}>
+              Следите за позицией в очереди в режиме реального времени через WebSocket.
+            </p>
+          </div>
+
+          <div style={styles.infoCard}>
+            <div style={styles.infoIcon}>💬</div>
+            <h3 style={styles.infoTitle}>Общайтесь в чате</h3>
+            <p style={styles.infoText}>
+              Обменивайтесь сообщениями с другими участниками прямо в приложении.
+            </p>
+          </div>
+
+          <div style={styles.demoNote}>
+            <p style={styles.demoText}>
+              <strong>Демо-данные для входа:</strong>
+              <br />
+              Email: demo@example.com
+              <br />
+              Пароль: demo123
+            </p>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
 
 const styles = {
   container: {
-    ...commonStyles.container,
+    minHeight: '100vh',
+    backgroundColor: '#F5F5F5',
+    fontFamily: '"Inter", sans-serif',
+  },
+
+  // Navigation
+  nav: {
+    backgroundColor: '#FFFFFF',
+    borderBottom: '1px solid #E0E0E0',
+  },
+  navContent: {
+    maxWidth: '1400px',
+    margin: '0 auto',
+    padding: '20px 40px',
     display: 'flex',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: '40px 20px',
-  },
-  content: {
-    width: '100%',
-    maxWidth: '450px',
-    animation: 'fadeIn 0.6s ease-out',
-  },
-  brand: {
-    textAlign: 'center',
-    marginBottom: '40px',
   },
   logo: {
-    fontSize: '4rem',
-    marginBottom: '20px',
-    animation: 'bounce 2s infinite',
+    textDecoration: 'none',
+  },
+  logoText: {
+    fontSize: '1.3rem',
+    fontWeight: '700',
+    color: '#191919',
+    letterSpacing: '-0.02em',
+  },
+  navLinks: {
+    display: 'flex',
+    gap: '30px',
+  },
+  navLink: {
+    color: '#191919',
+    textDecoration: 'none',
+    fontSize: '1rem',
+    fontWeight: '500',
+    transition: 'color 0.3s ease',
+  },
+
+  // Main
+  main: {
+    maxWidth: '1200px',
+    margin: '0 auto',
+    padding: '80px 40px',
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '80px',
+    alignItems: 'start',
+  },
+
+  // Form Container
+  formContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: '24px',
+    padding: '50px',
+    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)',
+  },
+
+  // Header
+  header: {
+    marginBottom: '40px',
   },
   title: {
-    fontSize: '2.5rem',
+    fontSize: '3rem',
     fontWeight: '700',
-    background: colors.primary.gradient,
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    backgroundClip: 'text',
+    color: '#191919',
     marginBottom: '10px',
+    letterSpacing: '-0.02em',
   },
   subtitle: {
     fontSize: '1.1rem',
-    color: colors.text.secondary,
+    color: '#666666',
+    lineHeight: '1.5',
   },
-  formCard: {
-    padding: '40px',
-  },
-  errorAlert: {
-    backgroundColor: `${colors.error.main}22`,
-    border: `2px solid ${colors.error.main}`,
-    borderRadius: '10px',
-    padding: '15px',
-    marginBottom: '25px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    color: colors.error.light,
-    fontSize: '1rem',
-  },
+
+  // Error
+  errorBox: {
+  backgroundColor: '#FFF3F3',
+  border: '3px solid #F44336', // Изменили с 1px на 3px
+  borderRadius: '30px', // Увеличили закругление
+  padding: '16px',
+  marginBottom: '30px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
+  color: '#C62828',
+  fontSize: '0.95rem',
+},
   errorIcon: {
-    fontSize: '1.3rem',
+    fontSize: '1.2rem',
   },
+
+  // Form
   form: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '25px',
+    gap: '24px',
   },
   inputGroup: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '10px',
-  },
-  label: {
-    fontSize: '1rem',
-    fontWeight: '500',
-    color: colors.text.primary,
-    display: 'flex',
-    alignItems: 'center',
     gap: '8px',
   },
-  labelIcon: {
-    fontSize: '1.2rem',
+  label: {
+    fontSize: '0.95rem',
+    fontWeight: '500',
+    color: '#191919',
   },
-  inputError: {
-    borderColor: colors.error.main,
+  input: {
+    width: '100%',
+    padding: '14px 18px',
+    fontSize: '1rem',
+    color: '#191919',
+    backgroundColor: '#F5F5F5',
+    border: '2px solid #E0E0E0',
+    borderRadius: '12px',
+    outline: 'none',
+    transition: 'all 0.3s ease',
+    fontFamily: 'inherit',
+    boxSizing: 'border-box',
   },
-  links: {
-    marginTop: '30px',
-  },
-  divider: {
-    display: 'flex',
-    alignItems: 'center',
-    margin: '25px 0',
-  },
-  dividerText: {
-    flex: 1,
-    textAlign: 'center',
-    color: colors.text.secondary,
-    fontSize: '0.9rem',
-    position: 'relative',
-    '::before': {
-      content: '""',
-      position: 'absolute',
-      top: '50%',
-      left: 0,
-      right: 0,
-      height: '1px',
-      backgroundColor: colors.divider,
-    },
-  },
+
+  // Footer
   footer: {
-    textAlign: 'center',
     marginTop: '30px',
+    textAlign: 'center',
+  },
+  footerText: {
+    fontSize: '0.95rem',
+    color: '#666666',
+  },
+  footerLink: {
+    color: '#191919',
+    fontWeight: '600',
+    textDecoration: 'none',
+    borderBottom: '2px solid #FFDD2D',
+    transition: 'border-color 0.3s ease',
+  },
+
+  // Side Info
+  sideInfo: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '24px',
+  },
+  infoCard: {
+  backgroundColor: '#FFFFFF',
+  borderRadius: '24px', // Увеличили закругление
+  padding: '30px',
+  boxShadow: '0 2px 12px rgba(0, 0, 0, 0.04)',
+  border: '1px solid #E0E0E0', // Добавили легкую границу
+},
+  infoIcon: {
+    fontSize: '2.5rem',
+    marginBottom: '16px',
+  },
+  infoTitle: {
+    fontSize: '1.3rem',
+    fontWeight: '600',
+    color: '#191919',
+    marginBottom: '12px',
+  },
+  infoText: {
+    fontSize: '1rem',
+    color: '#666666',
+    lineHeight: '1.6',
+  },
+  demoNote: {
+  backgroundColor: '#FFF9E6',
+  border: '3px solid #FFDD2D', // Изменили с 2px на 3px
+  borderRadius: '30px', // Увеличили закругление
+  padding: '24px',
+},
+  demoText: {
+    fontSize: '0.95rem',
+    color: '#191919',
+    lineHeight: '1.6',
+    margin: 0,
   },
 };
 

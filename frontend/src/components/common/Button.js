@@ -1,91 +1,98 @@
 import React from 'react';
-import { colors, commonStyles } from '../../styles/theme';
 
-function Button({ 
-  children, 
-  variant = 'primary', 
-  onClick, 
-  disabled, 
-  type = 'button',
-  fullWidth = false,
+function Button({
+  children,
+  onClick,
+  variant = 'primary',
   size = 'medium',
-  icon,
+  disabled = false,
+  fullWidth = false,
+  icon = null,
+  type = 'button',
   style = {},
 }) {
-  const getButtonStyles = () => {
-    const baseStyles = {
-      ...commonStyles.button,
-      opacity: disabled ? 0.6 : 1,
-      cursor: disabled ? 'not-allowed' : 'pointer',
-      width: fullWidth ? '100%' : 'auto',
-    };
+  const baseStyles = {
+    padding: size === 'small' ? '10px 20px' : size === 'large' ? '16px 32px' : '12px 24px',
+    fontSize: size === 'small' ? '0.9rem' : size === 'large' ? '1.1rem' : '1rem',
+    fontWeight: '600',
+    borderRadius: '100px', // Очень закругленные углы как на картинке
+    border: 'none',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    transition: 'all 0.3s ease',
+    fontFamily: 'inherit',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    width: fullWidth ? '100%' : 'auto',
+    opacity: disabled ? 0.5 : 1,
+    boxSizing: 'border-box',
+  };
 
-    const sizeStyles = {
-      small: { padding: '8px 20px', fontSize: '0.875rem' },
-      medium: { padding: '12px 28px', fontSize: '1rem' },
-      large: { padding: '16px 36px', fontSize: '1.1rem' },
-    };
+  const variants = {
+    primary: {
+      backgroundColor: '#FFDD2D',
+      color: '#191919',
+      border: '3px solid #FFDD2D',
+      boxShadow: 'none',
+    },
+    secondary: {
+      backgroundColor: '#191919',
+      color: '#FFFFFF',
+      border: '3px solid #191919',
+    },
+    outline: {
+      backgroundColor: 'transparent',
+      color: '#191919',
+      border: '3px solid #E0E0E0',
+    },
+    ghost: {
+      backgroundColor: 'transparent',
+      color: '#666666',
+      border: '3px solid transparent',
+    },
+    success: {
+      backgroundColor: '#4CAF50',
+      color: '#FFFFFF',
+      border: '3px solid #4CAF50',
+    },
+    warning: {
+      backgroundColor: '#FF9800',
+      color: '#FFFFFF',
+      border: '3px solid #FF9800',
+    },
+    error: {
+      backgroundColor: '#F44336',
+      color: '#FFFFFF',
+      border: '3px solid #F44336',
+    },
+  };
 
-    const variantStyles = {
-      primary: {
-        background: colors.primary.gradient,
-        color: colors.text.primary,
-      },
-      secondary: {
-        background: colors.secondary.gradient,
-        color: colors.text.primary,
-      },
-      success: {
-        background: colors.success.main,
-        color: colors.text.primary,
-      },
-      warning: {
-        background: colors.warning.main,
-        color: colors.text.primary,
-      },
-      error: {
-        background: colors.error.main,
-        color: colors.text.primary,
-      },
-      outline: {
-        background: 'transparent',
-        border: `2px solid ${colors.primary.main}`,
-        color: colors.primary.main,
-      },
-      ghost: {
-        background: 'transparent',
-        color: colors.info.main,
-      },
-    };
+  const [isHovered, setIsHovered] = React.useState(false);
 
-    return {
-      ...baseStyles,
-      ...sizeStyles[size],
-      ...variantStyles[variant],
-      ...style,
-    };
+  const hoverStyles = isHovered && !disabled ? {
+    transform: 'translateY(-1px)',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+    opacity: 0.9,
+  } : {};
+
+  const finalStyles = {
+    ...baseStyles,
+    ...variants[variant],
+    ...hoverStyles,
+    ...style,
   };
 
   return (
     <button
       type={type}
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      style={finalStyles}
       disabled={disabled}
-      style={getButtonStyles()}
-      onMouseEnter={(e) => {
-        if (!disabled) {
-          e.currentTarget.style.transform = 'translateY(-2px)';
-          e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!disabled) {
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = 'none';
-        }
-      }}
+      onMouseEnter={() => !disabled && setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      {icon && <span style={{ marginRight: '8px' }}>{icon}</span>}
+      {icon && <span>{icon}</span>}
       {children}
     </button>
   );

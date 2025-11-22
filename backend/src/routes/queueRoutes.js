@@ -1,26 +1,24 @@
 const express = require('express');
 const router = express.Router();
 const queueController = require('../controllers/queueController');
+const authMiddleware = require('../middleware/authMiddleware');
 
-// GET /api/queue/:eventId - Получить очередь для события
-router.get('/:eventId', queueController.getQueue);
+// Получить очередь для события (публичный доступ)
+router.get('/:eventId', queueController.getQueueByEvent);
 
-// POST /api/queue/join/:eventId - Встать в очередь
-router.post('/join/:eventId', queueController.joinQueue);
+// Встать в очередь (требуется авторизация)
+router.post('/:eventId/join', authMiddleware, queueController.joinQueue);
 
-// DELETE /api/queue/leave/:entryId - Покинуть очередь
-router.delete('/leave/:entryId', queueController.leaveQueue);
+// Покинуть очередь (требуется авторизация)
+router.delete('/:queueId', authMiddleware, queueController.leaveQueue);
 
-// PATCH /api/queue/:entryId/pause - Временно покинуть (пауза)
-router.patch('/:entryId/pause', queueController.pauseQueue);
+// Поставить на паузу (требуется авторизация)
+router.put('/:queueId/pause', authMiddleware, queueController.pauseQueue);
 
-// PATCH /api/queue/:entryId/resume - Вернуться в очередь
-router.patch('/:entryId/resume', queueController.resumeQueue);
+// Возобновить (требуется авторизация)
+router.put('/:queueId/resume', authMiddleware, queueController.resumeQueue);
 
-// PATCH /api/queue/:entryId/complete - Завершить обслуживание (admin)
-router.patch('/:entryId/complete', queueController.completeService);
-
-// GET /api/queue/user/:userId - Получить очереди пользователя
-router.get('/user/:userId', queueController.getUserQueues);
+// Получить мои очереди (требуется авторизация)
+router.get('/my', authMiddleware, queueController.getMyQueues);
 
 module.exports = router;
