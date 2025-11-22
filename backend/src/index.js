@@ -62,6 +62,18 @@ const authRoutes = require('./routes/authRoutes');
 // Роуты авторизации
 app.use('/api/auth', authRoutes);
 
+// Роуты событий
+const eventRoutes = require('./routes/eventRoutes');
+app.use('/api/events', eventRoutes);
+
+// Роуты очередей
+const queueRoutes = require('./routes/queueRoutes');
+app.use('/api/queue', queueRoutes);
+
+// Роуты сообщений
+const messageRoutes = require('./routes/messageRoutes');
+app.use('/api/messages', messageRoutes);
+
 // WebSocket подключения
 io.on('connection', (socket) => {
   console.log('✅ Новый клиент подключен:', socket.id);

@@ -78,6 +78,28 @@ function initDatabase() {
         console.log('✅ Таблица queue_entries готова');
       }
     });
+
+    // Таблица сообщений (НОВАЯ!)
+    db.run(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sender_id INTEGER NOT NULL,
+        receiver_id INTEGER,
+        event_id INTEGER NOT NULL,
+        content TEXT NOT NULL,
+        is_read INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (sender_id) REFERENCES users(id),
+        FOREIGN KEY (receiver_id) REFERENCES users(id),
+        FOREIGN KEY (event_id) REFERENCES events(id)
+      )
+    `, (err) => {
+      if (err) {
+        console.error('❌ Ошибка создания таблицы messages:', err.message);
+      } else {
+        console.log('✅ Таблица messages готова');
+      }
+    });
   });
 }
 
