@@ -31,7 +31,6 @@ const queueController = {
     const userId = req.user.id;
     console.log('➕ Пользователь', userId, 'встает в очередь события', eventId);
 
-    // Проверяем, не стоит ли пользователь уже в очереди
     db.get(
       'SELECT * FROM queues WHERE event_id = ? AND user_id = ? AND status IN ("waiting", "called")',
       [eventId, userId],
@@ -46,7 +45,6 @@ const queueController = {
           return res.status(400).json({ error: 'Вы уже в очереди' });
         }
 
-        // Проверяем активность события
         db.get('SELECT * FROM events WHERE id = ?', [eventId], (err, event) => {
           if (err) {
             console.error('❌ Ошибка проверки события:', err);
@@ -61,7 +59,6 @@ const queueController = {
             return res.status(400).json({ error: 'Событие не активно' });
           }
 
-          // Получаем текущую позицию в очереди
           db.get(
             'SELECT MAX(position) as max_position FROM queues WHERE event_id = ?',
             [eventId],
@@ -73,12 +70,10 @@ const queueController = {
 
               const position = (result.max_position || 0) + 1;
 
-              // Проверяем максимальный размер очереди
               if (position > event.max_queue_size) {
                 return res.status(400).json({ error: 'Очередь заполнена' });
               }
 
-              // Добавляем в очередь
               db.run(
                 'INSERT INTO queues (event_id, user_id, position, status) VALUES (?, ?, ?, ?)',
                 [eventId, userId, position, 'waiting'],
@@ -108,11 +103,11 @@ const queueController = {
 
   // Покинуть очередь
   leaveQueue: (req, res) => {
-    const { queueId } = req.params;
+    const { entryId } = req.params;
     const userId = req.user.id;
-    console.log('➖ Пользователь', userId, 'покидает очередь', queueId);
+    console.log('➖ Пользователь', userId, 'покидает очередь', entryId);
 
-    db.get('SELECT * FROM queues WHERE id = ?', [queueId], (err, entry) => {
+    db.get('SELECT * FROM queues WHERE id = ?', [entryId], (err, entry) => {
       if (err) {
         console.error('❌ Ошибка получения записи:', err);
         return res.status(500).json({ error: 'Ошибка сервера' });
@@ -126,14 +121,12 @@ const queueController = {
         return res.status(403).json({ error: 'Нет доступа' });
       }
 
-      // Удаляем из очереди
-      db.run('DELETE FROM queues WHERE id = ?', [queueId], (err) => {
+      db.run('DELETE FROM queues WHERE id = ?', [entryId], (err) => {
         if (err) {
           console.error('❌ Ошибка удаления из очереди:', err);
           return res.status(500).json({ error: 'Ошибка удаления из очереди' });
         }
 
-        // Обновляем позиции остальных
         db.run(
           'UPDATE queues SET position = position - 1 WHERE event_id = ? AND position > ?',
           [entry.event_id, entry.position],
@@ -151,11 +144,11 @@ const queueController = {
 
   // Поставить на паузу
   pauseQueue: (req, res) => {
-    const { queueId } = req.params;
+    const { entryId } = req.params;
     const userId = req.user.id;
-    console.log('⏸️ Пауза очереди', queueId);
+    console.log('⏸️ Пауза очереди', entryId);
 
-    db.get('SELECT * FROM queues WHERE id = ?', [queueId], (err, entry) => {
+    db.get('SELECT * FROM queues WHERE id = ?', [entryId], (err, entry) => {
       if (err) {
         console.error('❌ Ошибка получения записи:', err);
         return res.status(500).json({ error: 'Ошибка сервера' });
@@ -169,7 +162,7 @@ const queueController = {
         return res.status(403).json({ error: 'Нет доступа' });
       }
 
-      db.run('UPDATE queues SET is_paused = 1 WHERE id = ?', [queueId], (err) => {
+      db.run('UPDATE queues SET is_paused = 1 WHERE id = ?', [entryId], (err) => {
         if (err) {
           console.error('❌ Ошибка паузы:', err);
           return res.status(500).json({ error: 'Ошибка паузы' });
@@ -183,11 +176,11 @@ const queueController = {
 
   // Возобновить
   resumeQueue: (req, res) => {
-    const { queueId } = req.params;
+    const { entryId } = req.params;
     const userId = req.user.id;
-    console.log('▶️ Возобновление очереди', queueId);
+    console.log('▶️ Возобновление очереди', entryId);
 
-    db.get('SELECT * FROM queues WHERE id = ?', [queueId], (err, entry) => {
+    db.get('SELECT * FROM queues WHERE id = ?', [entryId], (err, entry) => {
       if (err) {
         console.error('❌ Ошибка получения записи:', err);
         return res.status(500).json({ error: 'Ошибка сервера' });
@@ -201,7 +194,7 @@ const queueController = {
         return res.status(403).json({ error: 'Нет доступа' });
       }
 
-      db.run('UPDATE queues SET is_paused = 0 WHERE id = ?', [queueId], (err) => {
+      db.run('UPDATE queues SET is_paused = 0 WHERE id = ?', [entryId], (err) => {
         if (err) {
           console.error('❌ Ошибка возобновления:', err);
           return res.status(500).json({ error: 'Ошибка возобновления' });
@@ -219,7 +212,7 @@ const queueController = {
     console.log('📋 Запрос очередей пользователя:', userId);
 
     db.all(
-      `SELECT q.*, e.name as event_name, e.location as event_location, e.avg_service_time
+      `SELECT q.*, e.name as event_name, e.location, e.avg_service_time
        FROM queues q
        JOIN events e ON q.event_id = e.id
        WHERE q.user_id = ? AND q.status IN ('waiting', 'called')
@@ -232,7 +225,31 @@ const queueController = {
         }
 
         console.log('✅ Получены очереди пользователя, записей:', queues.length);
-        res.json(queues);
+        res.json({ queues });
+      }
+    );
+  },
+
+  // Получить очереди пользователя по ID
+  getUserQueues: (req, res) => {
+    const { userId } = req.params;
+    console.log('📋 Запрос очередей пользователя по ID:', userId);
+
+    db.all(
+      `SELECT q.*, e.name as event_name, e.location, e.avg_service_time
+       FROM queues q
+       JOIN events e ON q.event_id = e.id
+       WHERE q.user_id = ? AND q.status IN ('waiting', 'called')
+       ORDER BY q.joined_at DESC`,
+      [userId],
+      (err, queues) => {
+        if (err) {
+          console.error('❌ Ошибка получения очередей:', err);
+          return res.status(500).json({ error: 'Ошибка получения очередей' });
+        }
+
+        console.log('✅ Получены очереди, записей:', queues.length);
+        res.json({ queues });
       }
     );
   },

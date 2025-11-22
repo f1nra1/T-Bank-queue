@@ -5,7 +5,7 @@ const queueService = {
   getQueueByEvent: async (eventId) => {
     try {
       const response = await api.get(`/queue/${eventId}`);
-      return response.data;
+      return response.data.queue || response.data || [];
     } catch (error) {
       throw error.response?.data || { error: 'Ошибка получения очереди' };
     }
@@ -14,7 +14,10 @@ const queueService = {
   // Встать в очередь
   joinQueue: async (eventId) => {
     try {
-      const response = await api.post(`/queue/${eventId}/join`);
+      const user = JSON.parse(localStorage.getItem('user'));
+      const response = await api.post(`/queue/${eventId}/join`, {
+        userId: user?.id
+      });
       return response.data;
     } catch (error) {
       throw error.response?.data || { error: 'Ошибка входа в очередь' };
@@ -32,9 +35,9 @@ const queueService = {
   },
 
   // Поставить на паузу
-  pauseQueue: async (queueId) => {
+  pauseQueue: async (queueId, minutes = 15) => {
     try {
-      const response = await api.put(`/queue/${queueId}/pause`);
+      const response = await api.put(`/queue/${queueId}/pause`, { minutes });
       return response.data;
     } catch (error) {
       throw error.response?.data || { error: 'Ошибка паузы' };
@@ -51,11 +54,21 @@ const queueService = {
     }
   },
 
+  // Получить очереди пользователя по ID
+  getUserQueues: async (userId) => {
+    try {
+      const response = await api.get(`/queue/user/${userId}`);
+      return response.data.queues || response.data || [];
+    } catch (error) {
+      throw error.response?.data || { error: 'Ошибка получения очередей' };
+    }
+  },
+
   // Получить мои очереди
   getMyQueues: async () => {
     try {
       const response = await api.get('/queue/my');
-      return response.data;
+      return response.data.queues || response.data || [];
     } catch (error) {
       throw error.response?.data || { error: 'Ошибка получения очередей' };
     }
