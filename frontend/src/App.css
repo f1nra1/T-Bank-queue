@@ -1,0 +1,40 @@
+.App {
+  text-align: center;
+  min-height: 100vh;
+  background-color: #282c34;
+}
+
+.App-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: white;
+}
+
+.App-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.App-header h2 {
+  font-size: 1.5rem;
+  color: #61dafb;
+  margin-bottom: 20px;
+}
+
+.App-header h3 {
+  color: #61dafb;
+  margin-bottom: 15px;
+}
+
+.App-header p {
+  margin: 8px 0;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
