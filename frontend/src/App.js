@@ -6,6 +6,7 @@ import RegisterPage from './pages/RegisterPage';
 import EventsPage from './pages/EventsPage';
 import EventDetailPage from './pages/EventDetailPage';
 import MyQueuesPage from './pages/MyQueuesPage';
+import AdminPage from './pages/AdminPage';
 import './App.css';
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
         <Route path="/events" element={<EventsPage />} />
         <Route path="/event/:eventId" element={<EventDetailPage />} />
         <Route path="/my-queues" element={<MyQueuesPage />} />
+        <Route path="/admin" element={<AdminPage />} />
       </Routes>
     </div>
   );

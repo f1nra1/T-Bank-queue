@@ -74,6 +74,10 @@ app.use('/api/queue', queueRoutes);
 const messageRoutes = require('./routes/messageRoutes');
 app.use('/api/messages', messageRoutes);
 
+// Роуты админа
+const adminRoutes = require('./routes/adminRoutes');
+app.use('/api/admin', adminRoutes);
+
 // WebSocket подключения
 io.on('connection', (socket) => {
   console.log('✅ Новый клиент подключен:', socket.id);
