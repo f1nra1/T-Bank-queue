@@ -7,6 +7,7 @@ import EventsPage from './pages/EventsPage';
 import EventDetailPage from './pages/EventDetailPage';
 import MyQueuesPage from './pages/MyQueuesPage';
 import AdminPage from './pages/AdminPage';
+import FloatingChatButton from './components/chat/FloatingChatButton';
 import './App.css';
 
 function App() {
@@ -21,6 +22,9 @@ function App() {
         <Route path="/my-queues" element={<MyQueuesPage />} />
         <Route path="/admin" element={<AdminPage />} />
       </Routes>
+      
+      {/* Плавающая кнопка чата с поддержкой */}
+      <FloatingChatButton />
     </div>
   );
 }

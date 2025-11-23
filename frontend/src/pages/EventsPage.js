@@ -278,12 +278,12 @@ function EventsPage() {
             <Link to="/" className="events-footer-link">Главная</Link>
             <Link to="/login" className="events-footer-link">Войти</Link>
             <Link to="/register" className="events-footer-link">Регистрация</Link>
-            <Link to="/admin" className="events-footer-link">Админка</Link>
+            <Link to="/admin" className="events-footer-link">Админ</Link>
           </div>
         </div>
         <div className="events-footer-bottom">
           <p className="events-copyright">
-            © 2024 T-Bank Queue. Создано для хакатона Т-Банк × НГТУ
+            © 2025 T-Bank Queue. Создано для хакатона Т-Банк × НГТУ
           </p>
         </div>
       </footer>
