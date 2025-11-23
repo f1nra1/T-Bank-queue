@@ -4,6 +4,7 @@ import eventService from '../services/eventService';
 import queueService from '../services/queueService';
 import authService from '../services/authService';
 import Button from '../components/common/Button';
+import './EventDetailPage.css';
 
 function EventDetailPage() {
   const { eventId } = useParams();
@@ -32,15 +33,8 @@ function EventDetailPage() {
     setError('');
 
     try {
-      // Загружаем очередь (она включает и событие)
       const queueResponse = await queueService.getQueueByEvent(eventId);
-      
-      // queueService.getQueueByEvent возвращает массив очереди
-      // но нам нужно также получить событие
       const eventData = await eventService.getEventById(eventId);
-      
-      console.log('Event data:', eventData);
-      console.log('Queue data:', queueResponse);
       
       setEvent(eventData);
       setQueue(Array.isArray(queueResponse) ? queueResponse : []);
@@ -113,6 +107,8 @@ function EventDetailPage() {
     try {
       await queueService.resumeQueue(myQueueEntry.id);
       await loadEventData();
+    } catch (err) {
+      alert(err.error || 'Ошибка возобновления');
     } finally {
       setActionLoading(false);
     }
@@ -126,16 +122,16 @@ function EventDetailPage() {
 
   if (loading) {
     return (
-      <div style={styles.container}>
-        <nav style={styles.nav}>
-          <div style={styles.navContent}>
-            <Link to="/" style={styles.logo}>
-              <span style={styles.logoText}>T-Bank Queue</span>
+      <div className="event-detail-container">
+        <nav className="event-detail-nav">
+          <div className="event-detail-nav-content">
+            <Link to="/" className="event-detail-logo">
+              <span className="event-detail-logo-text">T-Bank Queue</span>
             </Link>
           </div>
         </nav>
-        <div style={styles.loading}>
-          <div style={styles.spinner}></div>
+        <div className="event-detail-loading">
+          <div className="event-detail-spinner"></div>
           <p>Загрузка события...</p>
         </div>
       </div>
@@ -144,17 +140,21 @@ function EventDetailPage() {
 
   if (error || !event) {
     return (
-      <div style={styles.container}>
-        <nav style={styles.nav}>
-          <div style={styles.navContent}>
-            <Link to="/" style={styles.logo}>
-              <span style={styles.logoText}>T-Bank Queue</span>
+      <div className="event-detail-container">
+        <nav className="event-detail-nav">
+          <div className="event-detail-nav-content">
+            <Link to="/" className="event-detail-logo">
+              <span className="event-detail-logo-text">T-Bank Queue</span>
             </Link>
           </div>
         </nav>
-        <div style={styles.errorContainer}>
-          <div style={styles.errorBox}>
-            <span style={styles.errorIcon}>⚠️</span>
+        <div className="event-detail-error-container">
+          <div className="event-detail-error-box">
+            <svg className="event-detail-error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
             <span>{error || 'Событие не найдено'}</span>
           </div>
           <Link to="/events" style={{ textDecoration: 'none' }}>
@@ -166,18 +166,18 @@ function EventDetailPage() {
   }
 
   return (
-    <div style={styles.container}>
+    <div className="event-detail-container">
       {/* Navigation */}
-      <nav style={styles.nav}>
-        <div style={styles.navContent}>
-          <Link to="/" style={styles.logo}>
-            <span style={styles.logoText}>T-Bank Queue</span>
+      <nav className="event-detail-nav">
+        <div className="event-detail-nav-content">
+          <Link to="/" className="event-detail-logo">
+            <span className="event-detail-logo-text">T-Bank Queue</span>
           </Link>
-          <div style={styles.navLinks}>
-            <Link to="/events" style={styles.navLink}>← К мероприятиям</Link>
+          <div className="event-detail-nav-links">
+            <Link to="/events" className="event-detail-nav-link">← К мероприятиям</Link>
             {currentUser ? (
               <>
-                <Link to="/my-queues" style={styles.navLink}>Мои очереди</Link>
+                <Link to="/my-queues" className="event-detail-nav-link">Мои очереди</Link>
                 <Button
                   variant="outline"
                   size="small"
@@ -199,68 +199,89 @@ function EventDetailPage() {
       </nav>
 
       {/* Content */}
-      <main style={styles.main}>
-        <div style={styles.mainContent}>
+      <main className="event-detail-main">
+        <div className="event-detail-main-content">
           {/* Left Column - Event Info */}
-          <div style={styles.leftColumn}>
+          <div className="event-detail-left-column">
             {/* Event Header */}
-            <div style={styles.eventHeader}>
-              <div style={styles.eventIconLarge}>🎯</div>
+            <div className="event-detail-event-header">
+              <svg className="event-detail-event-icon-large" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+              </svg>
               <div>
-                <h1 style={styles.eventTitle}>{event.name}</h1>
-                <div style={{
-                  ...styles.statusBadge,
-                  backgroundColor: isEventActive(event) ? '#4CAF50' : '#F44336',
-                }}>
-                  {isEventActive(event) ? '✓ Активно' : '✕ Завершено'}
+                <h1 className="event-detail-event-title">{event.name}</h1>
+                <div 
+                  className="event-detail-status-badge"
+                  style={{
+                    backgroundColor: isEventActive(event) ? '#4CAF50' : '#F44336',
+                  }}
+                >
+                  {isEventActive(event) ? 'Активно' : 'Завершено'}
                 </div>
               </div>
             </div>
 
             {/* Event Description */}
-            <div style={styles.section}>
-              <h2 style={styles.sectionTitle}>Описание</h2>
-              <p style={styles.description}>
+            <div className="event-detail-section">
+              <h2 className="event-detail-section-title">Описание</h2>
+              <p className="event-detail-description">
                 {event.description || 'Описание отсутствует'}
               </p>
             </div>
 
             {/* Event Details */}
-            <div style={styles.section}>
-              <h2 style={styles.sectionTitle}>Информация</h2>
-              <div style={styles.infoGrid}>
-                <div style={styles.infoItem}>
-                  <span style={styles.infoIcon}>📍</span>
+            <div className="event-detail-section">
+              <h2 className="event-detail-section-title">Информация</h2>
+              <div className="event-detail-info-grid">
+                <div className="event-detail-info-item">
+                  <svg className="event-detail-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
                   <div>
-                    <div style={styles.infoLabel}>Локация</div>
-                    <div style={styles.infoValue}>
+                    <div className="event-detail-info-label">Локация</div>
+                    <div className="event-detail-info-value">
                       {event.location || 'Не указана'}
                     </div>
                   </div>
                 </div>
-                <div style={styles.infoItem}>
-                  <span style={styles.infoIcon}>⏱️</span>
+                <div className="event-detail-info-item">
+                  <svg className="event-detail-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
                   <div>
-                    <div style={styles.infoLabel}>Среднее время</div>
-                    <div style={styles.infoValue}>
+                    <div className="event-detail-info-label">Среднее время</div>
+                    <div className="event-detail-info-value">
                       ~{event.avg_service_time} минут
                     </div>
                   </div>
                 </div>
-                <div style={styles.infoItem}>
-                  <span style={styles.infoIcon}>👥</span>
+                <div className="event-detail-info-item">
+                  <svg className="event-detail-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
                   <div>
-                    <div style={styles.infoLabel}>Макс. размер очереди</div>
-                    <div style={styles.infoValue}>
+                    <div className="event-detail-info-label">Макс. размер очереди</div>
+                    <div className="event-detail-info-value">
                       {event.max_queue_size} человек
                     </div>
                   </div>
                 </div>
-                <div style={styles.infoItem}>
-                  <span style={styles.infoIcon}>📊</span>
+                <div className="event-detail-info-item">
+                  <svg className="event-detail-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M3 3h7v7H3z"/>
+                    <path d="M14 3h7v7h-7z"/>
+                    <path d="M14 14h7v7h-7z"/>
+                    <path d="M3 14h7v7H3z"/>
+                  </svg>
                   <div>
-                    <div style={styles.infoLabel}>Сейчас в очереди</div>
-                    <div style={styles.infoValue}>
+                    <div className="event-detail-info-label">Сейчас в очереди</div>
+                    <div className="event-detail-info-value">
                       {queue.length} человек
                     </div>
                   </div>
@@ -270,47 +291,54 @@ function EventDetailPage() {
           </div>
 
           {/* Right Column - Queue */}
-          <div style={styles.rightColumn}>
+          <div className="event-detail-right-column">
             {/* My Status */}
             {myQueueEntry ? (
-              <div style={styles.myStatusCard}>
-                <div style={styles.myStatusHeader}>
-                  <span style={styles.myStatusIcon}>✨</span>
-                  <span style={styles.myStatusTitle}>Ваш статус</span>
+              <div className="event-detail-my-status-card">
+                <div className="event-detail-my-status-header">
+                  <svg className="event-detail-my-status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  </svg>
+                  <span className="event-detail-my-status-title">Ваш статус</span>
                 </div>
 
-                <div style={styles.positionDisplay}>
-                  <div style={styles.positionLabel}>Позиция в очереди</div>
-                  <div style={styles.positionNumber}>#{myQueueEntry.position}</div>
+                <div className="event-detail-position-display">
+                  <div className="event-detail-position-label">Позиция в очереди</div>
+                  <div className="event-detail-position-number">#{myQueueEntry.position}</div>
                 </div>
 
-                <div style={styles.waitTimeDisplay}>
-                  <span style={styles.waitTimeIcon}>⏱️</span>
-                  <span style={styles.waitTimeText}>
+                <div className="event-detail-wait-time-display">
+                  <svg className="event-detail-wait-time-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  <span className="event-detail-wait-time-text">
                     Примерное время ожидания: <strong>{getEstimatedWaitTime()} минут</strong>
                   </span>
                 </div>
 
-                <div style={styles.statusDisplay}>
-                  <div style={{
-                    ...styles.statusChip,
-                    backgroundColor: 
-                      myQueueEntry.status === 'waiting' ? '#2196F3' :
-                      myQueueEntry.status === 'called' ? '#FF9800' :
-                      myQueueEntry.status === 'completed' ? '#4CAF50' : '#666666'
-                  }}>
-                    {myQueueEntry.status === 'waiting' ? '⏳ Ожидание' :
-                     myQueueEntry.status === 'called' ? '📢 Вызван' :
-                     myQueueEntry.status === 'completed' ? '✓ Завершено' : myQueueEntry.status}
+                <div className="event-detail-status-display">
+                  <div 
+                    className="event-detail-status-chip"
+                    style={{
+                      backgroundColor: 
+                        myQueueEntry.status === 'waiting' ? '#2196F3' :
+                        myQueueEntry.status === 'called' ? '#FF9800' :
+                        myQueueEntry.status === 'completed' ? '#4CAF50' : '#666666'
+                    }}
+                  >
+                    {myQueueEntry.status === 'waiting' ? 'Ожидание' :
+                     myQueueEntry.status === 'called' ? 'Вызван' :
+                     myQueueEntry.status === 'completed' ? 'Завершено' : myQueueEntry.status}
                   </div>
                   {myQueueEntry.is_paused == 1 && (
-                    <div style={{ ...styles.statusChip, backgroundColor: '#FF9800' }}>
-                      ⏸️ На паузе
+                    <div className="event-detail-status-chip" style={{ backgroundColor: '#FF9800' }}>
+                      На паузе
                     </div>
                   )}
                 </div>
 
-                <div style={styles.actionButtons}>
+                <div className="event-detail-action-buttons">
                   {myQueueEntry.is_paused == 1 ? (
                     <Button
                       variant="success"
@@ -318,7 +346,7 @@ function EventDetailPage() {
                       onClick={handleResumeQueue}
                       disabled={actionLoading}
                     >
-                      ▶️ Возобновить
+                      Возобновить
                     </Button>
                   ) : (
                     <Button
@@ -327,7 +355,7 @@ function EventDetailPage() {
                       onClick={handlePauseQueue}
                       disabled={actionLoading || myQueueEntry.status !== 'waiting'}
                     >
-                      ⏸️ Поставить на паузу
+                      Поставить на паузу
                     </Button>
                   )}
                   <Button
@@ -336,17 +364,20 @@ function EventDetailPage() {
                     onClick={handleLeaveQueue}
                     disabled={actionLoading}
                   >
-                    ✕ Покинуть очередь
+                    Покинуть очередь
                   </Button>
                 </div>
               </div>
             ) : (
-              <div style={styles.joinCard}>
-                <div style={styles.joinHeader}>
-                  <span style={styles.joinIcon}>🎯</span>
-                  <h3 style={styles.joinTitle}>Встать в очередь</h3>
+              <div className="event-detail-join-card">
+                <div className="event-detail-join-header">
+                  <svg className="event-detail-join-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 6v6l4 2"/>
+                  </svg>
+                  <h3 className="event-detail-join-title">Встать в очередь</h3>
                 </div>
-                <p style={styles.joinText}>
+                <p className="event-detail-join-text">
                   {queue.length === 0 
                     ? 'Очередь пуста! Станьте первым!' 
                     : `В очереди ${queue.length} человек. Примерное время ожидания: ${queue.length * event.avg_service_time} минут`
@@ -354,8 +385,12 @@ function EventDetailPage() {
                 </p>
                 {isEventActive(event) ? (
                   queue.length >= event.max_queue_size ? (
-                    <div style={styles.fullQueueMessage}>
-                      <span>⚠️</span>
+                    <div className="event-detail-full-queue-message">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                      </svg>
                       <span>Очередь заполнена</span>
                     </div>
                   ) : (
@@ -370,8 +405,12 @@ function EventDetailPage() {
                     </Button>
                   )
                 ) : (
-                  <div style={styles.inactiveMessage}>
-                    <span>✕</span>
+                  <div className="event-detail-inactive-message">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="15" y1="9" x2="9" y2="15"/>
+                      <line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
                     <span>Мероприятие завершено</span>
                   </div>
                 )}
@@ -379,52 +418,65 @@ function EventDetailPage() {
             )}
 
             {/* Queue List */}
-            <div style={styles.queueCard}>
-              <div style={styles.queueHeader}>
-                <span style={styles.queueIcon}>📋</span>
-                <h3 style={styles.queueTitle}>Очередь ({queue.length})</h3>
+            <div className="event-detail-queue-card">
+              <div className="event-detail-queue-header">
+                <svg className="event-detail-queue-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M9 5H2v15h7V5z"/>
+                  <path d="M22 5h-7v15h7V5z"/>
+                  <path d="M5 2v3M19 2v3M5 19v3M19 19v3"/>
+                </svg>
+                <h3 className="event-detail-queue-title">
+                  Очередь ({queue.length})
+                </h3>
               </div>
 
               {queue.length === 0 ? (
-                <div style={styles.emptyQueue}>
-                  <div style={styles.emptyQueueIcon}>📭</div>
-                  <p style={styles.emptyQueueText}>Очередь пуста</p>
+                <div className="event-detail-empty-queue">
+                  <svg className="event-detail-empty-queue-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M3 3h18v18H3z"/>
+                    <path d="M3 9h18"/>
+                    <path d="M9 21V9"/>
+                  </svg>
+                  <p className="event-detail-empty-queue-text">Очередь пуста</p>
                 </div>
               ) : (
-                <div style={styles.queueList}>
-                  {queue.slice(0, 10).map((entry) => (
-                    <div
-                      key={entry.id}
-                      style={{
-                        ...styles.queueItem,
-                        backgroundColor: entry.user_id === currentUser?.id ? '#FFF9E6' : '#FFFFFF',
-                        border: entry.user_id === currentUser?.id ? '2px solid #FFDD2D' : '1px solid #E0E0E0',
-                      }}
+                <div className="event-detail-queue-list">
+                  {queue.map((entry) => (
+                    <div 
+                      key={entry.id} 
+                      className={`event-detail-queue-item ${
+                        entry.user_id === currentUser?.id ? 'event-detail-queue-item-me' : ''
+                      }`}
                     >
-                      <div style={styles.queueItemLeft}>
-                        <div style={styles.queuePosition}>#{entry.position}</div>
-                        <div>
-                          <div style={styles.queueUserName}>
-                            {entry.user_name}
-                            {entry.user_id === currentUser?.id && (
-                              <span style={styles.youBadge}>Вы</span>
-                            )}
-                          </div>
-                          <div style={styles.queueUserStatus}>
-                            {entry.status === 'waiting' ? '⏳ Ожидает' :
-                             entry.status === 'called' ? '📢 Вызван' :
-                             entry.status === 'completed' ? '✓ Завершено' : entry.status}
-                            {entry.is_paused == 1 && ' • ⏸️ Пауза'}
-                          </div>
+                      <div className="event-detail-queue-position">#{entry.position}</div>
+                      <div className="event-detail-queue-user-info">
+                        <div className="event-detail-queue-user-name">
+                          {entry.user_name}
+                          {entry.user_id === currentUser?.id && (
+                            <span className="event-detail-queue-me-badge">Вы</span>
+                          )}
+                        </div>
+                        <div className="event-detail-queue-meta">
+                          <span 
+                            className="event-detail-queue-status"
+                            style={{
+                              color: 
+                                entry.status === 'waiting' ? '#2196F3' :
+                                entry.status === 'called' ? '#FF9800' :
+                                entry.status === 'completed' ? '#4CAF50' : '#666666'
+                            }}
+                          >
+                            {entry.status === 'waiting' ? 'Ожидает' :
+                             entry.status === 'called' ? 'Вызван' :
+                             entry.status === 'completed' ? 'Завершено' : entry.status}
+                          </span>
+                          {entry.is_paused == 1 && (
+                            <span className="event-detail-queue-paused">Пауза</span>
+                          )}
                         </div>
                       </div>
                     </div>
                   ))}
-                  {queue.length > 10 && (
-                    <div style={styles.moreItems}>
-                      И еще {queue.length - 10} человек...
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -434,395 +486,5 @@ function EventDetailPage() {
     </div>
   );
 }
-
-const styles = {
-  container: {
-    minHeight: '100vh',
-    backgroundColor: '#F5F5F5',
-    fontFamily: '"Inter", sans-serif',
-  },
-  nav: {
-    backgroundColor: '#FFFFFF',
-    borderBottom: '1px solid #E0E0E0',
-  },
-  navContent: {
-    maxWidth: '1400px',
-    margin: '0 auto',
-    padding: '20px 40px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  logo: {
-    textDecoration: 'none',
-  },
-  logoText: {
-    fontSize: '1.3rem',
-    fontWeight: '700',
-    color: '#191919',
-    letterSpacing: '-0.02em',
-  },
-  navLinks: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '20px',
-  },
-  navLink: {
-    color: '#191919',
-    textDecoration: 'none',
-    fontSize: '1rem',
-    fontWeight: '500',
-  },
-  main: {
-    padding: '60px 40px',
-  },
-  mainContent: {
-    maxWidth: '1400px',
-    margin: '0 auto',
-    display: 'grid',
-    gridTemplateColumns: '1fr 450px',
-    gap: '40px',
-  },
-  leftColumn: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '30px',
-  },
-  rightColumn: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '20px',
-  },
-  eventHeader: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: '24px',
-    padding: '40px',
-    display: 'flex',
-    gap: '25px',
-    alignItems: 'flex-start',
-    border: '1px solid #E0E0E0',
-  },
-  eventIconLarge: {
-    fontSize: '4rem',
-  },
-  eventTitle: {
-    fontSize: '2.5rem',
-    fontWeight: '700',
-    color: '#191919',
-    marginBottom: '15px',
-    letterSpacing: '-0.02em',
-  },
-  statusBadge: {
-    display: 'inline-block',
-    padding: '8px 20px',
-    borderRadius: '100px',
-    fontSize: '0.9rem',
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  section: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: '24px',
-    padding: '35px',
-    border: '1px solid #E0E0E0',
-  },
-  sectionTitle: {
-    fontSize: '1.5rem',
-    fontWeight: '600',
-    color: '#191919',
-    marginBottom: '20px',
-  },
-  description: {
-    fontSize: '1.1rem',
-    lineHeight: '1.7',
-    color: '#666666',
-  },
-  infoGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(2, 1fr)',
-    gap: '25px',
-  },
-  infoItem: {
-    display: 'flex',
-    gap: '15px',
-    alignItems: 'flex-start',
-  },
-  infoIcon: {
-    fontSize: '1.8rem',
-  },
-  infoLabel: {
-    fontSize: '0.85rem',
-    color: '#999999',
-    marginBottom: '5px',
-  },
-  infoValue: {
-    fontSize: '1.1rem',
-    fontWeight: '600',
-    color: '#191919',
-  },
-  myStatusCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: '24px',
-    padding: '30px',
-    border: '3px solid #FFDD2D',
-    boxShadow: '0 4px 20px rgba(255, 221, 45, 0.2)',
-  },
-  myStatusHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginBottom: '25px',
-  },
-  myStatusIcon: {
-    fontSize: '1.5rem',
-  },
-  myStatusTitle: {
-    fontSize: '1.2rem',
-    fontWeight: '600',
-    color: '#191919',
-  },
-  positionDisplay: {
-    textAlign: 'center',
-    padding: '25px',
-    backgroundColor: '#F5F5F5',
-    borderRadius: '16px',
-    marginBottom: '20px',
-  },
-  positionLabel: {
-    fontSize: '0.9rem',
-    color: '#666666',
-    marginBottom: '10px',
-  },
-  positionNumber: {
-    fontSize: '3.5rem',
-    fontWeight: '800',
-    color: '#191919',
-    lineHeight: '1',
-  },
-  waitTimeDisplay: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '15px',
-    backgroundColor: '#FFF9E6',
-    borderRadius: '12px',
-    marginBottom: '20px',
-    fontSize: '0.95rem',
-    color: '#191919',
-  },
-  waitTimeIcon: {
-    fontSize: '1.3rem',
-  },
-  waitTimeText: {},
-  statusDisplay: {
-    display: 'flex',
-    gap: '10px',
-    marginBottom: '20px',
-    flexWrap: 'wrap',
-  },
-  statusChip: {
-    padding: '8px 16px',
-    borderRadius: '100px',
-    fontSize: '0.85rem',
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  actionButtons: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-  },
-  joinCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: '24px',
-    padding: '35px',
-    border: '1px solid #E0E0E0',
-    textAlign: 'center',
-  },
-  joinHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '10px',
-    marginBottom: '20px',
-  },
-  joinIcon: {
-    fontSize: '2rem',
-  },
-  joinTitle: {
-    fontSize: '1.5rem',
-    fontWeight: '600',
-    color: '#191919',
-  },
-  joinText: {
-    fontSize: '1rem',
-    lineHeight: '1.6',
-    color: '#666666',
-    marginBottom: '25px',
-  },
-  fullQueueMessage: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '10px',
-    padding: '15px',
-    backgroundColor: '#FFF3F3',
-    borderRadius: '12px',
-    color: '#C62828',
-    fontWeight: '500',
-  },
-  inactiveMessage: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '10px',
-    padding: '15px',
-    backgroundColor: '#F5F5F5',
-    borderRadius: '12px',
-    color: '#666666',
-    fontWeight: '500',
-  },
-  queueCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: '24px',
-    padding: '30px',
-    border: '1px solid #E0E0E0',
-  },
-  queueHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginBottom: '20px',
-    paddingBottom: '20px',
-    borderBottom: '1px solid #E0E0E0',
-  },
-  queueIcon: {
-    fontSize: '1.5rem',
-  },
-  queueTitle: {
-    fontSize: '1.3rem',
-    fontWeight: '600',
-    color: '#191919',
-  },
-  emptyQueue: {
-    textAlign: 'center',
-    padding: '40px 20px',
-  },
-  emptyQueueIcon: {
-    fontSize: '3rem',
-    marginBottom: '15px',
-  },
-  emptyQueueText: {
-    fontSize: '1rem',
-    color: '#666666',
-  },
-  queueList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  },
-  queueItem: {
-    padding: '18px',
-    borderRadius: '16px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    transition: 'all 0.3s ease',
-  },
-  queueItemLeft: {
-    display: 'flex',
-    gap: '15px',
-    alignItems: 'center',
-    flex: 1,
-  },
-  queuePosition: {
-    fontSize: '1.3rem',
-    fontWeight: '700',
-    color: '#191919',
-    minWidth: '45px',
-  },
-  queueUserName: {
-    fontSize: '1rem',
-    fontWeight: '600',
-    color: '#191919',
-    marginBottom: '4px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
-  youBadge: {
-    fontSize: '0.75rem',
-    fontWeight: '600',
-    padding: '3px 10px',
-    backgroundColor: '#FFDD2D',
-    color: '#191919',
-    borderRadius: '100px',
-  },
-  queueUserStatus: {
-    fontSize: '0.85rem',
-    color: '#666666',
-  },
-  moreItems: {
-    textAlign: 'center',
-    padding: '15px',
-    fontSize: '0.9rem',
-    color: '#999999',
-  },
-  loading: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    padding: '100px 20px',
-    color: '#666666',
-  },
-  spinner: {
-    width: '50px',
-    height: '50px',
-    border: '4px solid #E0E0E0',
-    borderTop: '4px solid #FFDD2D',
-    borderRadius: '50%',
-    animation: 'spin 1s linear infinite',
-    marginBottom: '20px',
-  },
-  errorContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '100px 40px',
-    gap: '30px',
-  },
-  errorBox: {
-    backgroundColor: '#FFF3F3',
-    border: '3px solid #F44336',
-    borderRadius: '30px',
-    padding: '30px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '15px',
-    color: '#C62828',
-    fontSize: '1rem',
-  },
-  errorIcon: {
-    fontSize: '2rem',
-  },
-};
-
-// Добавляем CSS анимации безопасным способом
-const addKeyframes = () => {
-  const styleId = 'event-detail-keyframes';
-  if (document.getElementById(styleId)) return;
-  
-  const style = document.createElement('style');
-  style.id = styleId;
-  style.textContent = `
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-  `;
-  document.head.appendChild(style);
-};
-addKeyframes();
 
 export default EventDetailPage;

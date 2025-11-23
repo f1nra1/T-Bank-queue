@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import adminService from '../services/adminService';
 import authService from '../services/authService';
 import Button from '../components/common/Button';
+import './AdminPage.css';
 
 function AdminPage() {
   const [activeTab, setActiveTab] = useState('stats');
@@ -158,18 +159,18 @@ function AdminPage() {
   });
 
   return (
-    <div style={styles.container}>
+    <div className="admin-container">
       {/* Navigation */}
-      <nav style={styles.nav}>
-        <div style={styles.navContent}>
-          <Link to="/" style={styles.logo}>
-            <span style={styles.logoText}>T-Bank Queue</span>
+      <nav className="admin-nav">
+        <div className="admin-nav-content">
+          <Link to="/" className="admin-logo">
+            <span className="admin-logo-text">T-Bank Queue</span>
           </Link>
-          <div style={styles.navLinks}>
-            <Link to="/events" style={styles.navLink}>Мероприятия</Link>
+          <div className="admin-nav-links">
+            <Link to="/events" className="admin-nav-link">Мероприятия</Link>
             {currentUser && (
               <>
-                <span style={styles.adminBadge}>👨‍💼 Админ</span>
+                <span className="admin-badge">Админ</span>
                 <Button
                   variant="outline"
                   size="small"
@@ -187,33 +188,29 @@ function AdminPage() {
       </nav>
 
       {/* Header */}
-      <div style={styles.header}>
-        <h1 style={styles.title}>Панель управления</h1>
-        <p style={styles.subtitle}>Управление системой очередей</p>
+      <div className="admin-header">
+        <h1 className="admin-title">Панель управления</h1>
+        <p className="admin-subtitle">Управление системой очередей</p>
       </div>
 
       {/* Tabs */}
-      <div style={styles.tabsWrapper}>
-        <div style={styles.tabs}>
+      <div className="admin-tabs-wrapper">
+        <div className="admin-tabs">
           {[
-            { id: 'stats', icon: '📊', label: 'Статистика' },
-            { id: 'users', icon: '👥', label: 'Пользователи' },
-            { id: 'events', icon: '🎯', label: 'События' },
-            { id: 'queues', icon: '📋', label: 'Очереди' },
+            { id: 'stats', label: 'Статистика' },
+            { id: 'users', label: 'Пользователи' },
+            { id: 'events', label: 'События' },
+            { id: 'queues', label: 'Очереди' },
           ].map(tab => (
             <button
               key={tab.id}
-              style={{
-                ...styles.tab,
-                ...(activeTab === tab.id ? styles.tabActive : {}),
-              }}
+              className={`admin-tab ${activeTab === tab.id ? 'admin-tab-active' : ''}`}
               onClick={() => {
                 setActiveTab(tab.id);
                 setSearchTerm('');
                 setFilterStatus('all');
               }}
             >
-              <span>{tab.icon}</span>
               <span>{tab.label}</span>
             </button>
           ))}
@@ -222,15 +219,18 @@ function AdminPage() {
 
       {/* Controls */}
       {activeTab !== 'stats' && (
-        <div style={styles.controls}>
-          <div style={styles.searchWrapper}>
-            <span style={styles.searchIcon}>🔍</span>
+        <div className="admin-controls">
+          <div className="admin-search-wrapper">
+            <svg className="admin-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
             <input
               type="text"
               placeholder="Поиск..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={styles.searchInput}
+              className="admin-search-input"
             />
           </div>
 
@@ -238,7 +238,7 @@ function AdminPage() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              style={styles.filterSelect}
+              className="admin-filter-select"
             >
               <option value="all">Все</option>
               {activeTab === 'events' ? (
@@ -257,27 +257,31 @@ function AdminPage() {
 
           {activeTab === 'events' && (
             <button
-              style={styles.createButton}
+              className="admin-create-button"
               onClick={() => setShowCreateEventModal(true)}
             >
-              ➕ Создать событие
+              Создать событие
             </button>
           )}
         </div>
       )}
 
       {/* Content */}
-      <main style={styles.main}>
+      <main className="admin-main">
         {loading && (
-          <div style={styles.loading}>
-            <div style={styles.spinner}></div>
+          <div className="admin-loading">
+            <div className="admin-spinner"></div>
             <p>Загрузка...</p>
           </div>
         )}
 
         {error && (
-          <div style={styles.errorBox}>
-            <span>⚠️</span>
+          <div className="admin-error-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
             <span>{error}</span>
           </div>
         )}
@@ -286,67 +290,81 @@ function AdminPage() {
           <>
             {/* Stats */}
             {activeTab === 'stats' && stats && (
-              <div style={styles.statsGrid}>
-                <div style={styles.statCard}>
-                  <div style={styles.statIcon}>👥</div>
-                  <div style={styles.statValue}>{stats.totalUsers || 0}</div>
-                  <div style={styles.statLabel}>Пользователей</div>
+              <div className="admin-stats-grid">
+                <div className="admin-stat-card">
+                  <svg className="admin-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
+                  <div className="admin-stat-value">{stats.totalUsers || 0}</div>
+                  <div className="admin-stat-label">Пользователей</div>
                 </div>
-                <div style={styles.statCard}>
-                  <div style={styles.statIcon}>🎯</div>
-                  <div style={styles.statValue}>{stats.totalEvents || 0}</div>
-                  <div style={styles.statLabel}>Событий</div>
+                <div className="admin-stat-card">
+                  <svg className="admin-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 6v6l4 2"/>
+                  </svg>
+                  <div className="admin-stat-value">{stats.totalEvents || 0}</div>
+                  <div className="admin-stat-label">Событий</div>
                 </div>
-                <div style={styles.statCard}>
-                  <div style={styles.statIcon}>📋</div>
-                  <div style={styles.statValue}>{stats.activeQueues || 0}</div>
-                  <div style={styles.statLabel}>В очередях</div>
+                <div className="admin-stat-card">
+                  <svg className="admin-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M9 5H2v15h7V5z"/>
+                    <path d="M22 5h-7v15h7V5z"/>
+                  </svg>
+                  <div className="admin-stat-value">{stats.activeQueues || 0}</div>
+                  <div className="admin-stat-label">В очередях</div>
                 </div>
-                <div style={styles.statCard}>
-                  <div style={styles.statIcon}>✅</div>
-                  <div style={styles.statValue}>{stats.completedServices || 0}</div>
-                  <div style={styles.statLabel}>Обслужено</div>
+                <div className="admin-stat-card">
+                  <svg className="admin-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                  <div className="admin-stat-value">{stats.completedServices || 0}</div>
+                  <div className="admin-stat-label">Обслужено</div>
                 </div>
               </div>
             )}
 
             {/* Users */}
             {activeTab === 'users' && (
-              <div style={styles.card}>
-                <h3 style={styles.cardTitle}>Пользователи ({filteredUsers.length})</h3>
+              <div className="admin-card">
+                <h3 className="admin-card-title">Пользователи ({filteredUsers.length})</h3>
                 {filteredUsers.length === 0 ? (
-                  <div style={styles.emptyState}>
-                    <div style={styles.emptyIcon}>📭</div>
+                  <div className="admin-empty-state">
+                    <svg className="admin-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M3 3h18v18H3z"/>
+                      <path d="M3 9h18"/>
+                      <path d="M9 21V9"/>
+                    </svg>
                     <p>Пользователи не найдены</p>
                   </div>
                 ) : (
-                  <div style={styles.list}>
+                  <div className="admin-list">
                     {filteredUsers.map(user => (
-                      <div key={user.id} style={styles.listItem}>
-                        <div style={styles.userInfo}>
-                          <div style={styles.avatar}>
+                      <div key={user.id} className="admin-list-item">
+                        <div className="admin-user-info">
+                          <div className="admin-avatar">
                             {user.name?.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <div style={styles.userName}>{user.name}</div>
-                            <div style={styles.userEmail}>{user.email}</div>
+                            <div className="admin-user-name">{user.name}</div>
+                            <div className="admin-user-email">{user.email}</div>
                           </div>
                         </div>
-                        <div style={styles.userMeta}>
-                          <span style={{
-                            ...styles.roleBadge,
-                            backgroundColor: user.role === 'admin' ? '#FFDD2D' : '#E0E0E0',
-                            color: user.role === 'admin' ? '#191919' : '#666666',
-                          }}>
-                            {user.role === 'admin' ? '👨‍💼 Админ' : '👤 Пользователь'}
+                        <div className="admin-user-meta">
+                          <span className={`admin-role-badge ${user.role === 'admin' ? 'admin-role-admin' : ''}`}>
+                            {user.role === 'admin' ? 'Админ' : 'Пользователь'}
                           </span>
                         </div>
-                        <div style={styles.actions}>
+                        <div className="admin-actions">
                           <button
-                            style={styles.btnDanger}
+                            className="admin-btn-danger"
                             onClick={() => handleDeleteUser(user.id, user.name)}
                           >
-                            🗑️ Удалить
+                            Удалить
                           </button>
                         </div>
                       </div>
@@ -360,64 +378,86 @@ function AdminPage() {
             {activeTab === 'events' && (
               <div>
                 {filteredEvents.length === 0 ? (
-                  <div style={styles.card}>
-                    <div style={styles.emptyState}>
-                      <div style={styles.emptyIcon}>📭</div>
+                  <div className="admin-card">
+                    <div className="admin-empty-state">
+                      <svg className="admin-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M3 3h18v18H3z"/>
+                        <path d="M3 9h18"/>
+                        <path d="M9 21V9"/>
+                      </svg>
                       <p>События не найдены</p>
                       <button
-                        style={styles.createButton}
+                        className="admin-create-button"
                         onClick={() => setShowCreateEventModal(true)}
                       >
-                        ➕ Создать первое событие
+                        Создать первое событие
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div style={styles.eventsGrid}>
+                  <div className="admin-events-grid">
                     {filteredEvents.map(event => (
-                      <div key={event.id} style={styles.eventCard}>
-                        <div style={styles.eventHeader}>
-                          <span style={styles.eventIcon}>🎯</span>
-                          <span style={{
-                            ...styles.statusBadge,
-                            backgroundColor: event.is_active ? '#4CAF50' : '#F44336',
-                          }}>
-                            {event.is_active ? '✓ Активно' : '✕ Неактивно'}
+                      <div key={event.id} className="admin-event-card-new">
+                        {/* Header with Icon and Badge */}
+                        <div className="admin-event-card-header">
+                          <svg className="admin-event-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 6v6l4 2"/>
+                          </svg>
+                          <span className={`admin-event-badge ${event.is_active ? 'admin-event-badge-active' : 'admin-event-badge-inactive'}`}>
+                            {event.is_active ? 'Активно' : 'Неактивно'}
                           </span>
                         </div>
-                        <h4 style={styles.eventName}>{event.name}</h4>
-                        <p style={styles.eventDescription}>
-                          {event.description || 'Без описания'}
+
+                        {/* Title */}
+                        <h3 className="admin-event-card-name">{event.name}</h3>
+
+                        {/* Description */}
+                        <p className="admin-event-card-desc">
+                          {event.description || 'Описание отсутствует'}
                         </p>
-                        <div style={styles.eventMeta}>
-                          <div style={styles.metaItem}>
-                            <span>📍</span>
+
+                        {/* Info Section */}
+                        <div className="admin-event-info-box">
+                          <div className="admin-event-info-row">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                              <circle cx="12" cy="10" r="3"/>
+                            </svg>
                             <span>{event.location || 'Не указано'}</span>
                           </div>
-                          <div style={styles.metaItem}>
-                            <span>⏱️</span>
+                          <div className="admin-event-info-row">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                              <circle cx="12" cy="12" r="10"/>
+                              <polyline points="12 6 12 12 16 14"/>
+                            </svg>
                             <span>{event.avg_service_time} мин</span>
                           </div>
-                          <div style={styles.metaItem}>
-                            <span>👥</span>
+                          <div className="admin-event-info-row">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                              <circle cx="9" cy="7" r="4"/>
+                            </svg>
                             <span>Макс: {event.max_queue_size}</span>
                           </div>
                         </div>
-                        <div style={styles.eventActions}>
+
+                        {/* Actions */}
+                        <div className="admin-event-card-actions">
                           <Link to={`/event/${event.id}`} style={{ textDecoration: 'none', flex: 1 }}>
-                            <button style={styles.btnPrimary}>👁️ Открыть</button>
+                            <button className="admin-event-btn admin-event-btn-open">Открыть</button>
                           </Link>
                           <button
-                            style={event.is_active ? styles.btnWarning : styles.btnSuccess}
+                            className={`admin-event-btn ${event.is_active ? 'admin-event-btn-deactivate' : 'admin-event-btn-activate'}`}
                             onClick={() => handleToggleEvent(event.id, event.is_active)}
                           >
-                            {event.is_active ? '⏸️' : '▶️'}
+                            {event.is_active ? 'Деактивировать' : 'Активировать'}
                           </button>
                           <button
-                            style={styles.btnDanger}
+                            className="admin-event-btn admin-event-btn-delete"
                             onClick={() => handleDeleteEvent(event.id, event.name)}
                           >
-                            🗑️
+                            Удалить
                           </button>
                         </div>
                       </div>
@@ -429,50 +469,58 @@ function AdminPage() {
 
             {/* Queues */}
             {activeTab === 'queues' && (
-              <div style={styles.card}>
-                <h3 style={styles.cardTitle}>Очереди ({filteredQueues.length})</h3>
+              <div className="admin-card">
+                <h3 className="admin-card-title">Очереди ({filteredQueues.length})</h3>
                 {filteredQueues.length === 0 ? (
-                  <div style={styles.emptyState}>
-                    <div style={styles.emptyIcon}>📭</div>
+                  <div className="admin-empty-state">
+                    <svg className="admin-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M3 3h18v18H3z"/>
+                      <path d="M3 9h18"/>
+                      <path d="M9 21V9"/>
+                    </svg>
                     <p>Очереди пусты</p>
                   </div>
                 ) : (
-                  <div style={styles.list}>
+                  <div className="admin-list">
                     {filteredQueues.map(queue => (
-                      <div key={queue.id} style={styles.queueItem}>
-                        <div style={styles.queuePosition}>#{queue.position}</div>
-                        <div style={styles.queueInfo}>
-                          <div style={styles.queueUserName}>{queue.user_name}</div>
-                          <div style={styles.queueEventName}>🎯 {queue.event_name}</div>
+                      <div key={queue.id} className="admin-queue-item">
+                        <div className="admin-queue-position">#{queue.position}</div>
+                        <div className="admin-queue-info">
+                          <div className="admin-queue-user-name">{queue.user_name}</div>
+                          <div className="admin-queue-event-name">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                              <circle cx="12" cy="12" r="10"/>
+                              <path d="M12 6v6l4 2"/>
+                            </svg>
+                            {queue.event_name}
+                          </div>
                         </div>
-                        <div style={{
-                          ...styles.queueStatus,
-                          backgroundColor: queue.status === 'waiting' ? '#E3F2FD' : '#FFF3E0',
-                          color: queue.status === 'waiting' ? '#1976D2' : '#E65100',
-                        }}>
-                          {queue.status === 'waiting' ? '⏳ Ожидает' : '📢 Вызван'}
+                        <div className={`admin-queue-status ${
+                          queue.status === 'waiting' ? 'admin-queue-waiting' : 'admin-queue-called'
+                        }`}>
+                          {queue.status === 'waiting' ? 'Ожидает' : 'Вызван'}
                         </div>
-                        <div style={styles.queueActions}>
+                        <div className="admin-queue-actions">
                           {queue.status === 'waiting' ? (
                             <button
-                              style={styles.btnSuccess}
+                              className="admin-btn-success"
                               onClick={() => handleCallQueue(queue.id)}
                             >
-                              📢 Вызвать
+                              Вызвать
                             </button>
                           ) : (
                             <button
-                              style={styles.btnSuccess}
+                              className="admin-btn-success"
                               onClick={() => handleCompleteQueue(queue.id)}
                             >
-                              ✅ Завершить
+                              Завершить
                             </button>
                           )}
                           <button
-                            style={styles.btnDanger}
+                            className="admin-btn-danger"
                             onClick={() => handleDeleteQueue(queue.id, queue.user_name)}
                           >
-                            🗑️
+                            Удалить
                           </button>
                         </div>
                       </div>
@@ -487,74 +535,74 @@ function AdminPage() {
 
       {/* Create Event Modal */}
       {showCreateEventModal && (
-        <div style={styles.modalOverlay} onClick={() => setShowCreateEventModal(false)}>
-          <div style={styles.modal} onClick={e => e.stopPropagation()}>
-            <h2 style={styles.modalTitle}>➕ Создать событие</h2>
+        <div className="admin-modal-overlay" onClick={() => setShowCreateEventModal(false)}>
+          <div className="admin-modal" onClick={e => e.stopPropagation()}>
+            <h2 className="admin-modal-title">Создать событие</h2>
             <form onSubmit={handleCreateEvent}>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>Название *</label>
+              <div className="admin-form-group">
+                <label className="admin-form-label">Название *</label>
                 <input
                   type="text"
                   value={eventForm.name}
                   onChange={(e) => setEventForm({ ...eventForm, name: e.target.value })}
-                  style={styles.formInput}
+                  className="admin-form-input"
                   placeholder="Викторина по IT"
                   required
                 />
               </div>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>Описание</label>
+              <div className="admin-form-group">
+                <label className="admin-form-label">Описание</label>
                 <textarea
                   value={eventForm.description}
                   onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-                  style={{ ...styles.formInput, minHeight: '80px' }}
+                  className="admin-form-input admin-form-textarea"
                   placeholder="Интересная викторина с призами"
                 />
               </div>
-              <div style={styles.formGroup}>
-                <label style={styles.formLabel}>Локация</label>
+              <div className="admin-form-group">
+                <label className="admin-form-label">Локация</label>
                 <input
                   type="text"
                   value={eventForm.location}
                   onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
-                  style={styles.formInput}
+                  className="admin-form-input"
                   placeholder="Главная сцена"
                 />
               </div>
-              <div style={styles.formRow}>
-                <div style={styles.formGroup}>
-                  <label style={styles.formLabel}>Время обсл. (мин)</label>
+              <div className="admin-form-row">
+                <div className="admin-form-group">
+                  <label className="admin-form-label">Время обсл. (мин)</label>
                   <input
                     type="number"
                     value={eventForm.avg_service_time}
                     onChange={(e) => setEventForm({ ...eventForm, avg_service_time: parseInt(e.target.value) })}
-                    style={styles.formInput}
+                    className="admin-form-input"
                     min="1"
                     required
                   />
                 </div>
-                <div style={styles.formGroup}>
-                  <label style={styles.formLabel}>Макс. очередь</label>
+                <div className="admin-form-group">
+                  <label className="admin-form-label">Макс. очередь</label>
                   <input
                     type="number"
                     value={eventForm.max_queue_size}
                     onChange={(e) => setEventForm({ ...eventForm, max_queue_size: parseInt(e.target.value) })}
-                    style={styles.formInput}
+                    className="admin-form-input"
                     min="1"
                     required
                   />
                 </div>
               </div>
-              <div style={styles.modalActions}>
+              <div className="admin-modal-actions">
                 <button
                   type="button"
-                  style={styles.btnOutline}
+                  className="admin-btn-outline"
                   onClick={() => setShowCreateEventModal(false)}
                 >
                   Отмена
                 </button>
-                <button type="submit" style={styles.btnPrimary}>
-                  ✓ Создать
+                <button type="submit" className="admin-btn-primary">
+                  Создать
                 </button>
               </div>
             </form>
@@ -564,497 +612,5 @@ function AdminPage() {
     </div>
   );
 }
-
-const styles = {
-  container: {
-    minHeight: '100vh',
-    backgroundColor: '#F5F5F5',
-    fontFamily: '"Inter", sans-serif',
-  },
-  nav: {
-    backgroundColor: '#FFFFFF',
-    borderBottom: '1px solid #E0E0E0',
-  },
-  navContent: {
-    maxWidth: '1400px',
-    margin: '0 auto',
-    padding: '20px 40px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  logo: {
-    textDecoration: 'none',
-  },
-  logoText: {
-    fontSize: '1.3rem',
-    fontWeight: '700',
-    color: '#191919',
-  },
-  navLinks: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '20px',
-  },
-  navLink: {
-    color: '#191919',
-    textDecoration: 'none',
-    fontWeight: '500',
-  },
-  adminBadge: {
-    padding: '6px 12px',
-    backgroundColor: '#FFDD2D',
-    borderRadius: '100px',
-    fontSize: '0.85rem',
-    fontWeight: '600',
-    color: '#191919',
-  },
-  header: {
-    textAlign: 'center',
-    padding: '50px 40px 30px',
-  },
-  title: {
-    fontSize: '2.5rem',
-    fontWeight: '700',
-    color: '#191919',
-    marginBottom: '10px',
-  },
-  subtitle: {
-    fontSize: '1.1rem',
-    color: '#666666',
-  },
-  tabsWrapper: {
-    padding: '0 40px',
-    borderBottom: '1px solid #E0E0E0',
-    backgroundColor: '#FFFFFF',
-  },
-  tabs: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    display: 'flex',
-    gap: '5px',
-  },
-  tab: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '18px 25px',
-    backgroundColor: 'transparent',
-    border: 'none',
-    borderBottom: '3px solid transparent',
-    fontSize: '1rem',
-    fontWeight: '500',
-    color: '#666666',
-    cursor: 'pointer',
-    transition: 'all 0.3s',
-  },
-  tabActive: {
-    color: '#191919',
-    borderBottomColor: '#FFDD2D',
-    backgroundColor: '#FFFDF5',
-  },
-  controls: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '25px 40px',
-    display: 'flex',
-    gap: '15px',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-  },
-  searchWrapper: {
-    flex: 1,
-    minWidth: '250px',
-    position: 'relative',
-  },
-  searchIcon: {
-    position: 'absolute',
-    left: '15px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    fontSize: '1.1rem',
-  },
-  searchInput: {
-    width: '100%',
-    padding: '14px 20px 14px 45px',
-    fontSize: '1rem',
-    border: '2px solid #E0E0E0',
-    borderRadius: '12px',
-    outline: 'none',
-    transition: 'border-color 0.3s',
-  },
-  filterSelect: {
-    padding: '14px 20px',
-    fontSize: '1rem',
-    border: '2px solid #E0E0E0',
-    borderRadius: '12px',
-    backgroundColor: '#FFFFFF',
-    cursor: 'pointer',
-  },
-  createButton: {
-    padding: '14px 24px',
-    backgroundColor: '#FFDD2D',
-    color: '#191919',
-    border: 'none',
-    borderRadius: '12px',
-    fontSize: '1rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-  },
-  main: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '0 40px 60px',
-  },
-  loading: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    padding: '80px 20px',
-    color: '#666666',
-  },
-  spinner: {
-    width: '50px',
-    height: '50px',
-    border: '4px solid #E0E0E0',
-    borderTop: '4px solid #FFDD2D',
-    borderRadius: '50%',
-    animation: 'spin 1s linear infinite',
-    marginBottom: '20px',
-  },
-  errorBox: {
-    padding: '20px',
-    backgroundColor: '#FFF3F3',
-    border: '2px solid #F44336',
-    borderRadius: '16px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    color: '#C62828',
-    marginBottom: '25px',
-  },
-  statsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-    gap: '20px',
-  },
-  statCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: '20px',
-    padding: '35px 25px',
-    textAlign: 'center',
-    border: '1px solid #E0E0E0',
-  },
-  statIcon: {
-    fontSize: '3rem',
-    marginBottom: '15px',
-  },
-  statValue: {
-    fontSize: '3rem',
-    fontWeight: '800',
-    color: '#191919',
-    marginBottom: '8px',
-  },
-  statLabel: {
-    fontSize: '1rem',
-    color: '#666666',
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: '24px',
-    padding: '30px',
-    border: '1px solid #E0E0E0',
-  },
-  cardTitle: {
-    fontSize: '1.4rem',
-    fontWeight: '600',
-    color: '#191919',
-    marginBottom: '25px',
-  },
-  emptyState: {
-    textAlign: 'center',
-    padding: '60px 20px',
-    color: '#666666',
-  },
-  emptyIcon: {
-    fontSize: '4rem',
-    marginBottom: '15px',
-    opacity: 0.5,
-  },
-  list: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  },
-  listItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '20px',
-    padding: '20px',
-    backgroundColor: '#F5F5F5',
-    borderRadius: '16px',
-  },
-  userInfo: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '15px',
-    flex: 1,
-  },
-  avatar: {
-    width: '50px',
-    height: '50px',
-    borderRadius: '50%',
-    backgroundColor: '#FFDD2D',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '1.3rem',
-    fontWeight: '700',
-    color: '#191919',
-  },
-  userName: {
-    fontSize: '1.1rem',
-    fontWeight: '600',
-    color: '#191919',
-    marginBottom: '3px',
-  },
-  userEmail: {
-    fontSize: '0.9rem',
-    color: '#666666',
-  },
-  userMeta: {},
-  roleBadge: {
-    padding: '6px 14px',
-    borderRadius: '100px',
-    fontSize: '0.85rem',
-    fontWeight: '600',
-  },
-  actions: {
-    display: 'flex',
-    gap: '10px',
-  },
-  eventsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-    gap: '20px',
-  },
-  eventCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: '20px',
-    padding: '25px',
-    border: '1px solid #E0E0E0',
-  },
-  eventHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '15px',
-  },
-  eventIcon: {
-    fontSize: '2rem',
-  },
-  statusBadge: {
-    padding: '6px 12px',
-    borderRadius: '100px',
-    fontSize: '0.8rem',
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  eventName: {
-    fontSize: '1.3rem',
-    fontWeight: '600',
-    color: '#191919',
-    marginBottom: '10px',
-  },
-  eventDescription: {
-    fontSize: '0.95rem',
-    color: '#666666',
-    marginBottom: '15px',
-    minHeight: '40px',
-  },
-  eventMeta: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-    padding: '15px',
-    backgroundColor: '#F5F5F5',
-    borderRadius: '12px',
-    marginBottom: '15px',
-  },
-  metaItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    fontSize: '0.9rem',
-    color: '#666666',
-  },
-  eventActions: {
-    display: 'flex',
-    gap: '10px',
-  },
-  queueItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '20px',
-    padding: '20px',
-    backgroundColor: '#F5F5F5',
-    borderRadius: '16px',
-  },
-  queuePosition: {
-    fontSize: '1.5rem',
-    fontWeight: '700',
-    color: '#191919',
-    minWidth: '50px',
-  },
-  queueInfo: {
-    flex: 1,
-  },
-  queueUserName: {
-    fontSize: '1.1rem',
-    fontWeight: '600',
-    color: '#191919',
-    marginBottom: '3px',
-  },
-  queueEventName: {
-    fontSize: '0.9rem',
-    color: '#666666',
-  },
-  queueStatus: {
-    padding: '8px 14px',
-    borderRadius: '100px',
-    fontSize: '0.85rem',
-    fontWeight: '600',
-  },
-  queueActions: {
-    display: 'flex',
-    gap: '10px',
-  },
-  btnPrimary: {
-    flex: 1,
-    padding: '12px 18px',
-    backgroundColor: '#FFDD2D',
-    color: '#191919',
-    border: 'none',
-    borderRadius: '10px',
-    fontSize: '0.9rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-  },
-  btnOutline: {
-    padding: '12px 18px',
-    backgroundColor: 'transparent',
-    color: '#191919',
-    border: '2px solid #E0E0E0',
-    borderRadius: '10px',
-    fontSize: '0.9rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-  },
-  btnSuccess: {
-    padding: '12px 18px',
-    backgroundColor: '#E8F5E9',
-    color: '#2E7D32',
-    border: '1px solid #4CAF50',
-    borderRadius: '10px',
-    fontSize: '0.9rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-  },
-  btnWarning: {
-    padding: '12px 18px',
-    backgroundColor: '#FFF3E0',
-    color: '#E65100',
-    border: '1px solid #FF9800',
-    borderRadius: '10px',
-    fontSize: '0.9rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-  },
-  btnDanger: {
-    padding: '12px 18px',
-    backgroundColor: '#FFEBEE',
-    color: '#C62828',
-    border: '1px solid #F44336',
-    borderRadius: '10px',
-    fontSize: '0.9rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-  },
-  modalOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-    padding: '20px',
-  },
-  modal: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: '24px',
-    padding: '35px',
-    maxWidth: '500px',
-    width: '100%',
-    maxHeight: '90vh',
-    overflow: 'auto',
-  },
-  modalTitle: {
-    fontSize: '1.5rem',
-    fontWeight: '600',
-    color: '#191919',
-    marginBottom: '25px',
-  },
-  formGroup: {
-    marginBottom: '20px',
-  },
-  formLabel: {
-    display: 'block',
-    fontSize: '0.95rem',
-    fontWeight: '500',
-    color: '#191919',
-    marginBottom: '8px',
-  },
-  formInput: {
-    width: '100%',
-    padding: '14px 18px',
-    fontSize: '1rem',
-    border: '2px solid #E0E0E0',
-    borderRadius: '12px',
-    outline: 'none',
-    boxSizing: 'border-box',
-  },
-  formRow: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '15px',
-  },
-  modalActions: {
-    display: 'flex',
-    gap: '12px',
-    justifyContent: 'flex-end',
-    marginTop: '25px',
-  },
-};
-
-// CSS анимации
-const addKeyframes = () => {
-  const styleId = 'admin-page-keyframes';
-  if (document.getElementById(styleId)) return;
-  
-  const style = document.createElement('style');
-  style.id = styleId;
-  style.textContent = `
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-  `;
-  document.head.appendChild(style);
-};
-addKeyframes();
 
 export default AdminPage;

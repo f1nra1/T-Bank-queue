@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 import Button from '../components/common/Button';
+import './RegisterPage.css';
 
 function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -27,7 +28,6 @@ function RegisterPage() {
     e.preventDefault();
     setError('');
 
-    // Валидация
     if (formData.password !== formData.confirmPassword) {
       setError('Пароли не совпадают');
       return;
@@ -62,50 +62,54 @@ function RegisterPage() {
   const strength = getPasswordStrength();
 
   return (
-    <div style={styles.container}>
+    <div className="register-container">
       {/* Navigation */}
-      <nav style={styles.nav}>
-        <div style={styles.navContent}>
-          <Link to="/" style={styles.logo}>
-            <span style={styles.logoText}>T-Bank Queue</span>
+      <nav className="register-nav">
+        <div className="register-nav-content">
+          <Link to="/" className="register-logo">
+            <span className="register-logo-text">T-Bank Queue</span>
           </Link>
-          <div style={styles.navLinks}>
-            <Link to="/events" style={styles.navLink}>Мероприятия</Link>
-            <Link to="/login" style={styles.navLink}>Войти</Link>
+          <div className="register-nav-links">
+            <Link to="/events" className="register-nav-link">Мероприятия</Link>
+            <Link to="/login" className="register-nav-link">Войти</Link>
           </div>
         </div>
       </nav>
 
       {/* Main Content */}
-      <main style={styles.main}>
-        <div style={styles.formContainer}>
+      <main className="register-main">
+        <div className="register-form-container">
           {/* Header */}
-          <div style={styles.header}>
-            <h1 style={styles.title}>Регистрация</h1>
-            <p style={styles.subtitle}>
+          <div className="register-header">
+            <h1 className="register-title">Регистрация</h1>
+            <p className="register-subtitle">
               Создайте аккаунт, чтобы управлять очередями
             </p>
           </div>
 
           {/* Error Message */}
           {error && (
-            <div style={styles.errorBox}>
-              <span style={styles.errorIcon}>⚠️</span>
+            <div className="register-error-box">
+              <svg className="register-error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
               <span>{error}</span>
             </div>
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} style={styles.form}>
+          <form onSubmit={handleSubmit} className="register-form">
             {/* Name */}
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Имя</label>
+            <div className="register-input-group">
+              <label className="register-label">Имя</label>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                style={styles.input}
+                className="register-input"
                 placeholder="Иван Иванов"
                 required
                 disabled={loading}
@@ -113,14 +117,14 @@ function RegisterPage() {
             </div>
 
             {/* Email */}
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Email</label>
+            <div className="register-input-group">
+              <label className="register-label">Email</label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                style={styles.input}
+                className="register-input"
                 placeholder="ivan@example.com"
                 required
                 disabled={loading}
@@ -128,43 +132,48 @@ function RegisterPage() {
             </div>
 
             {/* Phone */}
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Телефон (необязательно)</label>
+            <div className="register-input-group">
+              <label className="register-label">Телефон (необязательно)</label>
               <input
                 type="tel"
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                style={styles.input}
+                className="register-input"
                 placeholder="+7 (999) 123-45-67"
                 disabled={loading}
               />
             </div>
 
             {/* Password */}
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Пароль</label>
+            <div className="register-input-group">
+              <label className="register-label">Пароль</label>
               <input
                 type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                style={styles.input}
+                className="register-input"
                 placeholder="Минимум 6 символов"
                 required
                 minLength="6"
                 disabled={loading}
               />
               {strength && (
-                <div style={styles.strengthContainer}>
-                  <div style={styles.strengthBar}>
-                    <div style={{
-                      ...styles.strengthFill,
-                      width: strength.width,
-                      backgroundColor: strength.color,
-                    }}></div>
+                <div className="register-strength-container">
+                  <div className="register-strength-bar">
+                    <div 
+                      className="register-strength-fill"
+                      style={{
+                        width: strength.width,
+                        backgroundColor: strength.color,
+                      }}
+                    ></div>
                   </div>
-                  <span style={{ ...styles.strengthLabel, color: strength.color }}>
+                  <span 
+                    className="register-strength-label"
+                    style={{ color: strength.color }}
+                  >
                     {strength.label}
                   </span>
                 </div>
@@ -172,14 +181,14 @@ function RegisterPage() {
             </div>
 
             {/* Confirm Password */}
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Подтвердите пароль</label>
+            <div className="register-input-group">
+              <label className="register-label">Подтвердите пароль</label>
               <input
                 type="password"
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                style={styles.input}
+                className="register-input"
                 placeholder="Повторите пароль"
                 required
                 disabled={loading}
@@ -199,10 +208,10 @@ function RegisterPage() {
           </form>
 
           {/* Footer Links */}
-          <div style={styles.footer}>
-            <p style={styles.footerText}>
+          <div className="register-footer">
+            <p className="register-footer-text">
               Уже есть аккаунт?{' '}
-              <Link to="/login" style={styles.footerLink}>
+              <Link to="/login" className="register-footer-link">
                 Войти
               </Link>
             </p>
@@ -210,27 +219,41 @@ function RegisterPage() {
         </div>
 
         {/* Side Info */}
-        <div style={styles.sideInfo}>
-          <div style={styles.infoCard}>
-            <div style={styles.infoIcon}>✨</div>
-            <h3 style={styles.infoTitle}>Быстрая регистрация</h3>
-            <p style={styles.infoText}>
+        <div className="register-side-info">
+          <div className="register-info-card">
+            <div className="register-info-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+            </div>
+            <h3 className="register-info-title">Быстрая регистрация</h3>
+            <p className="register-info-text">
               Займёт всего 30 секунд. Никаких сложных форм.
             </p>
           </div>
 
-          <div style={styles.infoCard}>
-            <div style={styles.infoIcon}>🔒</div>
-            <h3 style={styles.infoTitle}>Безопасность данных</h3>
-            <p style={styles.infoText}>
+          <div className="register-info-card">
+            <div className="register-info-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </div>
+            <h3 className="register-info-title">Безопасность данных</h3>
+            <p className="register-info-text">
               Все данные защищены и не передаются третьим лицам.
             </p>
           </div>
 
-          <div style={styles.infoCard}>
-            <div style={styles.infoIcon}>🎯</div>
-            <h3 style={styles.infoTitle}>Сразу в работу</h3>
-            <p style={styles.infoText}>
+          <div className="register-info-card">
+            <div className="register-info-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </div>
+            <h3 className="register-info-title">Сразу в работу</h3>
+            <p className="register-info-text">
               После регистрации можете сразу встать в очередь.
             </p>
           </div>
@@ -239,198 +262,5 @@ function RegisterPage() {
     </div>
   );
 }
-
-const styles = {
-  container: {
-    minHeight: '100vh',
-    backgroundColor: '#F5F5F5',
-    fontFamily: '"Inter", sans-serif',
-  },
-
-  // Navigation
-  nav: {
-    backgroundColor: '#FFFFFF',
-    borderBottom: '1px solid #E0E0E0',
-  },
-  navContent: {
-    maxWidth: '1400px',
-    margin: '0 auto',
-    padding: '20px 40px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  logo: {
-    textDecoration: 'none',
-  },
-  logoText: {
-    fontSize: '1.3rem',
-    fontWeight: '700',
-    color: '#191919',
-    letterSpacing: '-0.02em',
-  },
-  navLinks: {
-    display: 'flex',
-    gap: '30px',
-  },
-  navLink: {
-    color: '#191919',
-    textDecoration: 'none',
-    fontSize: '1rem',
-    fontWeight: '500',
-    transition: 'color 0.3s ease',
-  },
-
-  // Main
-  main: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '60px 40px',
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '80px',
-    alignItems: 'start',
-  },
-
-  // Form Container
-  formContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: '24px',
-    padding: '50px',
-    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)',
-  },
-
-  // Header
-  header: {
-    marginBottom: '40px',
-  },
-  title: {
-    fontSize: '3rem',
-    fontWeight: '700',
-    color: '#191919',
-    marginBottom: '10px',
-    letterSpacing: '-0.02em',
-  },
-  subtitle: {
-    fontSize: '1.1rem',
-    color: '#666666',
-    lineHeight: '1.5',
-  },
-
-  // Error
-  errorBox: {
-  backgroundColor: '#FFF3F3',
-  border: '3px solid #F44336', // Изменили с 1px на 3px
-  borderRadius: '30px', // Увеличили закругление
-  padding: '16px',
-  marginBottom: '30px',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '12px',
-  color: '#C62828',
-  fontSize: '0.95rem',
-},
-  errorIcon: {
-    fontSize: '1.2rem',
-  },
-
-  // Form
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '24px',
-  },
-  inputGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-  },
-  label: {
-    fontSize: '0.95rem',
-    fontWeight: '500',
-    color: '#191919',
-  },
-  input: {
-    width: '100%',
-    padding: '14px 18px',
-    fontSize: '1rem',
-    color: '#191919',
-    backgroundColor: '#F5F5F5',
-    border: '2px solid #E0E0E0',
-    borderRadius: '12px',
-    outline: 'none',
-    transition: 'all 0.3s ease',
-    fontFamily: 'inherit',
-    boxSizing: 'border-box',
-  },
-
-  // Password Strength
-  strengthContainer: {
-    marginTop: '8px',
-  },
-  strengthBar: {
-    width: '100%',
-    height: '4px',
-    backgroundColor: '#E0E0E0',
-    borderRadius: '2px',
-    overflow: 'hidden',
-    marginBottom: '6px',
-  },
-  strengthFill: {
-    height: '100%',
-    transition: 'width 0.3s ease',
-    borderRadius: '2px',
-  },
-  strengthLabel: {
-    fontSize: '0.85rem',
-    fontWeight: '500',
-  },
-
-  // Footer
-  footer: {
-    marginTop: '30px',
-    textAlign: 'center',
-  },
-  footerText: {
-    fontSize: '0.95rem',
-    color: '#666666',
-  },
-  footerLink: {
-    color: '#191919',
-    fontWeight: '600',
-    textDecoration: 'none',
-    borderBottom: '2px solid #FFDD2D',
-    transition: 'border-color 0.3s ease',
-  },
-
-  // Side Info
-  sideInfo: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '24px',
-  },
-  infoCard: {
-  backgroundColor: '#FFFFFF',
-  borderRadius: '24px', // Увеличили закругление
-  padding: '30px',
-  boxShadow: '0 2px 12px rgba(0, 0, 0, 0.04)',
-  border: '1px solid #E0E0E0', // Добавили легкую границу
-},
-  infoIcon: {
-    fontSize: '2.5rem',
-    marginBottom: '16px',
-  },
-  infoTitle: {
-    fontSize: '1.3rem',
-    fontWeight: '600',
-    color: '#191919',
-    marginBottom: '12px',
-  },
-  infoText: {
-    fontSize: '1rem',
-    color: '#666666',
-    lineHeight: '1.6',
-  },
-};
 
 export default RegisterPage;

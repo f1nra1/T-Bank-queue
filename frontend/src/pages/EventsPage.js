@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import eventService from '../services/eventService';
 import authService from '../services/authService';
 import Button from '../components/common/Button';
+import './EventsPage.css';
 
 function EventsPage() {
   const [events, setEvents] = useState([]);
@@ -24,7 +25,6 @@ function EventsPage() {
     try {
       const data = await eventService.getEvents();
       
-      // Проверяем разные форматы ответа
       if (Array.isArray(data)) {
         setEvents(data);
       } else if (data.events && Array.isArray(data.events)) {
@@ -46,18 +46,18 @@ function EventsPage() {
   );
 
   return (
-    <div style={styles.container}>
+    <div className="events-container">
       {/* Navigation */}
-      <nav style={styles.nav}>
-        <div style={styles.navContent}>
-          <Link to="/" style={styles.logo}>
-            <span style={styles.logoText}>T-Bank Queue</span>
+      <nav className="events-nav">
+        <div className="events-nav-content">
+          <Link to="/" className="events-logo">
+            <span className="events-logo-text">T-Bank Queue</span>
           </Link>
-          <div style={styles.navLinks}>
+          <div className="events-nav-links">
             {currentUser ? (
               <>
-                <Link to="/my-queues" style={styles.navLink}>Мои очереди</Link>
-                <Link to="/admin" style={styles.navLink}>Админка</Link>
+                <Link to="/my-queues" className="events-nav-link">Мои очереди</Link>
+                <Link to="/admin" className="events-nav-link">Админка</Link>
                 <Button
                   variant="outline"
                   size="small"
@@ -71,7 +71,7 @@ function EventsPage() {
               </>
             ) : (
               <>
-                <Link to="/login" style={styles.navLink}>Войти</Link>
+                <Link to="/login" className="events-nav-link">Войти</Link>
                 <Link to="/register" style={{ textDecoration: 'none' }}>
                   <Button variant="primary" size="small">Регистрация</Button>
                 </Link>
@@ -82,42 +82,48 @@ function EventsPage() {
       </nav>
 
       {/* Header Section */}
-      <section style={styles.header}>
-        <div style={styles.headerContent}>
-          <h1 style={styles.title}>Активные мероприятия</h1>
-          <p style={styles.subtitle}>
+      <section className="events-header">
+        <div className="events-header-content">
+          <h1 className="events-title">Активные мероприятия</h1>
+          <p className="events-subtitle">
             Выберите мероприятие и встаньте в очередь онлайн
           </p>
 
           {/* User Info */}
           {currentUser && (
-            <div style={styles.userCard}>
-              <div style={styles.userAvatar}>
+            <div className="events-user-card">
+              <div className="events-user-avatar">
                 {currentUser.name.charAt(0).toUpperCase()}
               </div>
-              <div style={styles.userInfo}>
-                <div style={styles.userName}>{currentUser.name}</div>
-                <div style={styles.userEmail}>{currentUser.email}</div>
+              <div className="events-user-info">
+                <div className="events-user-name">{currentUser.name}</div>
+                <div className="events-user-email">{currentUser.email}</div>
               </div>
             </div>
           )}
 
           {/* Search */}
-          <div style={styles.searchContainer}>
-            <span style={styles.searchIcon}>🔍</span>
+          <div className="events-search-container">
+            <svg className="events-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
             <input
               type="text"
               placeholder="Поиск мероприятий..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={styles.searchInput}
+              className="events-search-input"
             />
             {searchTerm && (
               <button
-                style={styles.clearButton}
+                className="events-clear-button"
                 onClick={() => setSearchTerm('')}
               >
-                ✕
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
               </button>
             )}
           </div>
@@ -125,20 +131,24 @@ function EventsPage() {
       </section>
 
       {/* Content */}
-      <section style={styles.content}>
-        <div style={styles.contentWrapper}>
+      <section className="events-content">
+        <div className="events-content-wrapper">
           {/* Loading */}
           {loading && (
-            <div style={styles.loading}>
-              <div style={styles.spinner}></div>
+            <div className="events-loading">
+              <div className="events-spinner"></div>
               <p>Загрузка мероприятий...</p>
             </div>
           )}
 
           {/* Error */}
           {!loading && error && (
-            <div style={styles.errorBox}>
-              <span style={styles.errorIcon}>⚠️</span>
+            <div className="events-error-box">
+              <svg className="events-error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
               <span>{error}</span>
               <Button onClick={loadEvents} variant="primary" style={{ marginTop: '15px' }}>
                 Попробовать снова
@@ -150,12 +160,16 @@ function EventsPage() {
           {!loading && !error && (
             <>
               {filteredEvents.length === 0 ? (
-                <div style={styles.emptyState}>
-                  <div style={styles.emptyIcon}>📭</div>
-                  <h2 style={styles.emptyTitle}>
+                <div className="events-empty-state">
+                  <svg className="events-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M3 3h18v18H3z"/>
+                    <path d="M3 9h18"/>
+                    <path d="M9 21V9"/>
+                  </svg>
+                  <h2 className="events-empty-title">
                     {searchTerm ? 'Ничего не найдено' : 'Нет активных мероприятий'}
                   </h2>
-                  <p style={styles.emptyText}>
+                  <p className="events-empty-text">
                     {searchTerm
                       ? 'Попробуйте изменить поисковый запрос'
                       : 'Мероприятия появятся здесь, когда будут добавлены'}
@@ -168,58 +182,74 @@ function EventsPage() {
                 </div>
               ) : (
                 <>
-                  <div style={styles.resultsCount}>
+                  <div className="events-results-count">
                     {searchTerm ? 'Найдено' : 'Всего'} мероприятий: <strong>{filteredEvents.length}</strong>
                   </div>
-                  <div style={styles.eventsGrid}>
+                  <div className="events-grid">
                     {filteredEvents.map((event) => (
                       <Link
                         key={event.id}
                         to={`/event/${event.id}`}
                         style={{ textDecoration: 'none' }}
                       >
-                        <div style={styles.eventCard}>
+                        <div className="events-event-card">
                           {/* Event Header */}
-                          <div style={styles.eventHeader}>
-                            <div style={styles.eventIcon}>🎯</div>
-                            <div style={{
-                              ...styles.statusBadge,
-                              backgroundColor: event.is_active ? '#4CAF50' : '#F44336',
-                            }}>
-                              {event.is_active ? '✓ Активно' : '✕ Завершено'}
+                          <div className="events-event-header">
+                            <svg className="events-event-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                              <circle cx="12" cy="12" r="10"/>
+                              <path d="M12 6v6l4 2"/>
+                            </svg>
+                            <div 
+                              className="events-status-badge"
+                              style={{
+                                backgroundColor: event.is_active ? '#4CAF50' : '#F44336',
+                              }}
+                            >
+                              {event.is_active ? 'Активно' : 'Завершено'}
                             </div>
                           </div>
 
                           {/* Event Content */}
-                          <h3 style={styles.eventName}>{event.name}</h3>
-                          <p style={styles.eventDescription}>
+                          <h3 className="events-event-name">{event.name}</h3>
+                          <p className="events-event-description">
                             {event.description || 'Описание отсутствует'}
                           </p>
 
                           {/* Event Details */}
-                          <div style={styles.eventDetails}>
-                            <div style={styles.detailItem}>
-                              <span style={styles.detailIcon}>📍</span>
-                              <span style={styles.detailText}>
+                          <div className="events-event-details">
+                            <div className="events-detail-item">
+                              <svg className="events-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                              </svg>
+                              <span className="events-detail-text">
                                 {event.location || 'Локация не указана'}
                               </span>
                             </div>
-                            <div style={styles.detailItem}>
-                              <span style={styles.detailIcon}>⏱️</span>
-                              <span style={styles.detailText}>
+                            <div className="events-detail-item">
+                              <svg className="events-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                              </svg>
+                              <span className="events-detail-text">
                                 ~{event.avg_service_time} минут
                               </span>
                             </div>
-                            <div style={styles.detailItem}>
-                              <span style={styles.detailIcon}>👥</span>
-                              <span style={styles.detailText}>
+                            <div className="events-detail-item">
+                              <svg className="events-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                              </svg>
+                              <span className="events-detail-text">
                                 До {event.max_queue_size} человек
                               </span>
                             </div>
                           </div>
 
                           {/* Event Footer */}
-                          <div style={styles.eventFooter}>
+                          <div className="events-event-footer">
                             <Button variant="primary" fullWidth>
                               Подробнее →
                             </Button>
@@ -236,23 +266,23 @@ function EventsPage() {
       </section>
 
       {/* Footer */}
-      <footer style={styles.footer}>
-        <div style={styles.footerContent}>
-          <div style={styles.footerLeft}>
-            <div style={styles.footerLogo}>T-Bank Queue</div>
-            <p style={styles.footerTagline}>
+      <footer className="events-footer">
+        <div className="events-footer-content">
+          <div className="events-footer-left">
+            <div className="events-footer-logo">T-Bank Queue</div>
+            <p className="events-footer-tagline">
               Электронная очередь для мероприятий
             </p>
           </div>
-          <div style={styles.footerRight}>
-            <Link to="/" style={styles.footerLink}>Главная</Link>
-            <Link to="/login" style={styles.footerLink}>Войти</Link>
-            <Link to="/register" style={styles.footerLink}>Регистрация</Link>
-            <Link to="/admin" style={styles.footerLink}>Админка</Link>
+          <div className="events-footer-right">
+            <Link to="/" className="events-footer-link">Главная</Link>
+            <Link to="/login" className="events-footer-link">Войти</Link>
+            <Link to="/register" className="events-footer-link">Регистрация</Link>
+            <Link to="/admin" className="events-footer-link">Админка</Link>
           </div>
         </div>
-        <div style={styles.footerBottom}>
-          <p style={styles.copyright}>
+        <div className="events-footer-bottom">
+          <p className="events-copyright">
             © 2024 T-Bank Queue. Создано для хакатона Т-Банк × НГТУ
           </p>
         </div>
@@ -260,333 +290,5 @@ function EventsPage() {
     </div>
   );
 }
-
-const styles = {
-  container: {
-    minHeight: '100vh',
-    backgroundColor: '#F5F5F5',
-    fontFamily: '"Inter", sans-serif',
-  },
-  nav: {
-    backgroundColor: '#FFFFFF',
-    borderBottom: '1px solid #E0E0E0',
-  },
-  navContent: {
-    maxWidth: '1400px',
-    margin: '0 auto',
-    padding: '20px 40px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  logo: {
-    textDecoration: 'none',
-  },
-  logoText: {
-    fontSize: '1.3rem',
-    fontWeight: '700',
-    color: '#191919',
-    letterSpacing: '-0.02em',
-  },
-  navLinks: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '20px',
-  },
-  navLink: {
-    color: '#191919',
-    textDecoration: 'none',
-    fontSize: '1rem',
-    fontWeight: '500',
-    transition: 'color 0.3s ease',
-  },
-  header: {
-    backgroundColor: '#FFFFFF',
-    padding: '60px 40px',
-    borderBottom: '1px solid #E0E0E0',
-  },
-  headerContent: {
-    maxWidth: '1400px',
-    margin: '0 auto',
-  },
-  title: {
-    fontSize: '3.5rem',
-    fontWeight: '700',
-    color: '#191919',
-    marginBottom: '15px',
-    letterSpacing: '-0.03em',
-  },
-  subtitle: {
-    fontSize: '1.3rem',
-    color: '#666666',
-    marginBottom: '40px',
-  },
-  userCard: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '15px',
-    padding: '20px 30px',
-    backgroundColor: '#F5F5F5',
-    borderRadius: '100px',
-    marginBottom: '30px',
-  },
-  userAvatar: {
-    width: '50px',
-    height: '50px',
-    borderRadius: '50%',
-    backgroundColor: '#FFDD2D',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '1.5rem',
-    fontWeight: '700',
-    color: '#191919',
-  },
-  userInfo: {},
-  userName: {
-    fontSize: '1.1rem',
-    fontWeight: '600',
-    color: '#191919',
-    marginBottom: '4px',
-  },
-  userEmail: {
-    fontSize: '0.9rem',
-    color: '#666666',
-  },
-  searchContainer: {
-    position: 'relative',
-    maxWidth: '600px',
-  },
-  searchIcon: {
-    position: 'absolute',
-    left: '20px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    fontSize: '1.3rem',
-    pointerEvents: 'none',
-  },
-  searchInput: {
-    width: '100%',
-    padding: '16px 55px 16px 55px',
-    fontSize: '1rem',
-    backgroundColor: '#F5F5F5',
-    border: '2px solid #E0E0E0',
-    borderRadius: '100px',
-    outline: 'none',
-    transition: 'all 0.3s ease',
-    fontFamily: 'inherit',
-    boxSizing: 'border-box',
-  },
-  clearButton: {
-    position: 'absolute',
-    right: '15px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    background: 'transparent',
-    border: 'none',
-    color: '#666666',
-    fontSize: '1.3rem',
-    cursor: 'pointer',
-    padding: '5px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '50%',
-  },
-  content: {
-    padding: '60px 40px',
-  },
-  contentWrapper: {
-    maxWidth: '1400px',
-    margin: '0 auto',
-  },
-  loading: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    padding: '80px 20px',
-    color: '#666666',
-  },
-  spinner: {
-    width: '50px',
-    height: '50px',
-    border: '4px solid #E0E0E0',
-    borderTop: '4px solid #FFDD2D',
-    borderRadius: '50%',
-    animation: 'spin 1s linear infinite',
-    marginBottom: '20px',
-  },
-  errorBox: {
-    backgroundColor: '#FFF3F3',
-    border: '3px solid #F44336',
-    borderRadius: '30px',
-    padding: '30px',
-    textAlign: 'center',
-    color: '#C62828',
-    maxWidth: '600px',
-    margin: '0 auto',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '10px',
-  },
-  errorIcon: {
-    fontSize: '2rem',
-  },
-  resultsCount: {
-    fontSize: '1rem',
-    color: '#666666',
-    marginBottom: '30px',
-  },
-  eventsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-    gap: '30px',
-  },
-  eventCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: '24px',
-    padding: '30px',
-    border: '1px solid #E0E0E0',
-    transition: 'all 0.3s ease',
-    cursor: 'pointer',
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-  },
-  eventHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '20px',
-  },
-  eventIcon: {
-    fontSize: '2.5rem',
-  },
-  statusBadge: {
-    padding: '6px 16px',
-    borderRadius: '100px',
-    fontSize: '0.85rem',
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  eventName: {
-    fontSize: '1.8rem',
-    fontWeight: '600',
-    color: '#191919',
-    marginBottom: '12px',
-    letterSpacing: '-0.01em',
-  },
-  eventDescription: {
-    fontSize: '1rem',
-    color: '#666666',
-    lineHeight: '1.6',
-    marginBottom: '20px',
-    minHeight: '48px',
-  },
-  eventDetails: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-    marginBottom: '20px',
-    padding: '20px',
-    backgroundColor: '#F5F5F5',
-    borderRadius: '16px',
-  },
-  detailItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    fontSize: '0.95rem',
-    color: '#191919',
-  },
-  detailIcon: {
-    fontSize: '1.3rem',
-  },
-  detailText: {
-    fontWeight: '500',
-  },
-  eventFooter: {
-    marginTop: 'auto',
-  },
-  emptyState: {
-    textAlign: 'center',
-    padding: '100px 40px',
-    maxWidth: '600px',
-    margin: '0 auto',
-  },
-  emptyIcon: {
-    fontSize: '5rem',
-    marginBottom: '30px',
-  },
-  emptyTitle: {
-    fontSize: '2rem',
-    fontWeight: '600',
-    color: '#191919',
-    marginBottom: '15px',
-  },
-  emptyText: {
-    fontSize: '1.1rem',
-    color: '#666666',
-    lineHeight: '1.6',
-    marginBottom: '30px',
-  },
-  footer: {
-    borderTop: '1px solid #E0E0E0',
-    backgroundColor: '#FFFFFF',
-    marginTop: '60px',
-  },
-  footerContent: {
-    maxWidth: '1400px',
-    margin: '0 auto',
-    padding: '60px 40px 30px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: '40px',
-  },
-  footerLeft: {
-    maxWidth: '400px',
-  },
-  footerLogo: {
-    fontSize: '1.3rem',
-    fontWeight: '700',
-    marginBottom: '15px',
-    color: '#191919',
-  },
-  footerTagline: {
-    fontSize: '0.95rem',
-    color: '#666666',
-  },
-  footerRight: {
-    display: 'flex',
-    gap: '30px',
-  },
-  footerLink: {
-    color: '#666666',
-    textDecoration: 'none',
-    fontSize: '0.95rem',
-    transition: 'color 0.3s ease',
-  },
-  footerBottom: {
-    borderTop: '1px solid #E0E0E0',
-    padding: '25px 40px',
-  },
-  copyright: {
-    textAlign: 'center',
-    fontSize: '0.85rem',
-    color: '#999999',
-  },
-};
-
-const styleSheet = document.styleSheets[0];
-try {
-  styleSheet.insertRule(`
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-  `, styleSheet.cssRules.length);
-} catch (e) {}
 
 export default EventsPage;

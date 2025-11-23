@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 import Button from '../components/common/Button';
+import './LoginPage.css';
 
 function LoginPage() {
   const [formData, setFormData] = useState({
@@ -36,50 +37,54 @@ function LoginPage() {
   };
 
   return (
-    <div style={styles.container}>
+    <div className="login-container">
       {/* Navigation */}
-      <nav style={styles.nav}>
-        <div style={styles.navContent}>
-          <Link to="/" style={styles.logo}>
-            <span style={styles.logoText}>T-Bank Queue</span>
+      <nav className="login-nav">
+        <div className="login-nav-content">
+          <Link to="/" className="login-logo">
+            <span className="login-logo-text">T-Bank Queue</span>
           </Link>
-          <div style={styles.navLinks}>
-            <Link to="/events" style={styles.navLink}>Мероприятия</Link>
-            <Link to="/register" style={styles.navLink}>Регистрация</Link>
+          <div className="login-nav-links">
+            <Link to="/events" className="login-nav-link">Мероприятия</Link>
+            <Link to="/register" className="login-nav-link">Регистрация</Link>
           </div>
         </div>
       </nav>
 
       {/* Main Content */}
-      <main style={styles.main}>
-        <div style={styles.formContainer}>
+      <main className="login-main">
+        <div className="login-form-container">
           {/* Header */}
-          <div style={styles.header}>
-            <h1 style={styles.title}>Вход</h1>
-            <p style={styles.subtitle}>
+          <div className="login-header">
+            <h1 className="login-title">Вход</h1>
+            <p className="login-subtitle">
               Войдите в аккаунт, чтобы управлять очередями
             </p>
           </div>
 
           {/* Error Message */}
           {error && (
-            <div style={styles.errorBox}>
-              <span style={styles.errorIcon}>⚠️</span>
+            <div className="login-error-box">
+              <svg className="login-error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
               <span>{error}</span>
             </div>
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} style={styles.form}>
+          <form onSubmit={handleSubmit} className="login-form">
             {/* Email */}
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Email</label>
+            <div className="login-input-group">
+              <label className="login-label">Email</label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                style={styles.input}
+                className="login-input"
                 placeholder="ivan@example.com"
                 required
                 disabled={loading}
@@ -87,14 +92,14 @@ function LoginPage() {
             </div>
 
             {/* Password */}
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Пароль</label>
+            <div className="login-input-group">
+              <label className="login-label">Пароль</label>
               <input
                 type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                style={styles.input}
+                className="login-input"
                 placeholder="Введите пароль"
                 required
                 disabled={loading}
@@ -114,10 +119,10 @@ function LoginPage() {
           </form>
 
           {/* Footer Links */}
-          <div style={styles.footer}>
-            <p style={styles.footerText}>
+          <div className="login-footer">
+            <p className="login-footer-text">
               Нет аккаунта?{' '}
-              <Link to="/register" style={styles.footerLink}>
+              <Link to="/register" className="login-footer-link">
                 Зарегистрироваться
               </Link>
             </p>
@@ -125,33 +130,45 @@ function LoginPage() {
         </div>
 
         {/* Side Info */}
-        <div style={styles.sideInfo}>
-          <div style={styles.infoCard}>
-            <div style={styles.infoIcon}>⚡</div>
-            <h3 style={styles.infoTitle}>Быстрый вход</h3>
-            <p style={styles.infoText}>
+        <div className="login-side-info">
+          <div className="login-info-card">
+            <div className="login-info-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
+            </div>
+            <h3 className="login-info-title">Быстрый вход</h3>
+            <p className="login-info-text">
               Войдите в систему за несколько секунд и начните пользоваться всеми возможностями.
             </p>
           </div>
 
-          <div style={styles.infoCard}>
-            <div style={styles.infoIcon}>🔄</div>
-            <h3 style={styles.infoTitle}>Real-time обновления</h3>
-            <p style={styles.infoText}>
+          <div className="login-info-card">
+            <div className="login-info-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+              </svg>
+            </div>
+            <h3 className="login-info-title">Real-time обновления</h3>
+            <p className="login-info-text">
               Следите за позицией в очереди в режиме реального времени через WebSocket.
             </p>
           </div>
 
-          <div style={styles.infoCard}>
-            <div style={styles.infoIcon}>💬</div>
-            <h3 style={styles.infoTitle}>Общайтесь в чате</h3>
-            <p style={styles.infoText}>
+          <div className="login-info-card">
+            <div className="login-info-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+            </div>
+            <h3 className="login-info-title">Общайтесь в чате</h3>
+            <p className="login-info-text">
               Обменивайтесь сообщениями с другими участниками прямо в приложении.
             </p>
           </div>
 
-          <div style={styles.demoNote}>
-            <p style={styles.demoText}>
+          <div className="login-demo-note">
+            <p className="login-demo-text">
               <strong>Демо-данные для входа:</strong>
               <br />
               Email: demo@example.com
@@ -164,188 +181,5 @@ function LoginPage() {
     </div>
   );
 }
-
-const styles = {
-  container: {
-    minHeight: '100vh',
-    backgroundColor: '#F5F5F5',
-    fontFamily: '"Inter", sans-serif',
-  },
-
-  // Navigation
-  nav: {
-    backgroundColor: '#FFFFFF',
-    borderBottom: '1px solid #E0E0E0',
-  },
-  navContent: {
-    maxWidth: '1400px',
-    margin: '0 auto',
-    padding: '20px 40px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  logo: {
-    textDecoration: 'none',
-  },
-  logoText: {
-    fontSize: '1.3rem',
-    fontWeight: '700',
-    color: '#191919',
-    letterSpacing: '-0.02em',
-  },
-  navLinks: {
-    display: 'flex',
-    gap: '30px',
-  },
-  navLink: {
-    color: '#191919',
-    textDecoration: 'none',
-    fontSize: '1rem',
-    fontWeight: '500',
-    transition: 'color 0.3s ease',
-  },
-
-  // Main
-  main: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '80px 40px',
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '80px',
-    alignItems: 'start',
-  },
-
-  // Form Container
-  formContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: '24px',
-    padding: '50px',
-    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)',
-  },
-
-  // Header
-  header: {
-    marginBottom: '40px',
-  },
-  title: {
-    fontSize: '3rem',
-    fontWeight: '700',
-    color: '#191919',
-    marginBottom: '10px',
-    letterSpacing: '-0.02em',
-  },
-  subtitle: {
-    fontSize: '1.1rem',
-    color: '#666666',
-    lineHeight: '1.5',
-  },
-
-  // Error
-  errorBox: {
-  backgroundColor: '#FFF3F3',
-  border: '3px solid #F44336', // Изменили с 1px на 3px
-  borderRadius: '30px', // Увеличили закругление
-  padding: '16px',
-  marginBottom: '30px',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '12px',
-  color: '#C62828',
-  fontSize: '0.95rem',
-},
-  errorIcon: {
-    fontSize: '1.2rem',
-  },
-
-  // Form
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '24px',
-  },
-  inputGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-  },
-  label: {
-    fontSize: '0.95rem',
-    fontWeight: '500',
-    color: '#191919',
-  },
-  input: {
-    width: '100%',
-    padding: '14px 18px',
-    fontSize: '1rem',
-    color: '#191919',
-    backgroundColor: '#F5F5F5',
-    border: '2px solid #E0E0E0',
-    borderRadius: '12px',
-    outline: 'none',
-    transition: 'all 0.3s ease',
-    fontFamily: 'inherit',
-    boxSizing: 'border-box',
-  },
-
-  // Footer
-  footer: {
-    marginTop: '30px',
-    textAlign: 'center',
-  },
-  footerText: {
-    fontSize: '0.95rem',
-    color: '#666666',
-  },
-  footerLink: {
-    color: '#191919',
-    fontWeight: '600',
-    textDecoration: 'none',
-    borderBottom: '2px solid #FFDD2D',
-    transition: 'border-color 0.3s ease',
-  },
-
-  // Side Info
-  sideInfo: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '24px',
-  },
-  infoCard: {
-  backgroundColor: '#FFFFFF',
-  borderRadius: '24px', // Увеличили закругление
-  padding: '30px',
-  boxShadow: '0 2px 12px rgba(0, 0, 0, 0.04)',
-  border: '1px solid #E0E0E0', // Добавили легкую границу
-},
-  infoIcon: {
-    fontSize: '2.5rem',
-    marginBottom: '16px',
-  },
-  infoTitle: {
-    fontSize: '1.3rem',
-    fontWeight: '600',
-    color: '#191919',
-    marginBottom: '12px',
-  },
-  infoText: {
-    fontSize: '1rem',
-    color: '#666666',
-    lineHeight: '1.6',
-  },
-  demoNote: {
-  backgroundColor: '#FFF9E6',
-  border: '3px solid #FFDD2D', // Изменили с 2px на 3px
-  borderRadius: '30px', // Увеличили закругление
-  padding: '24px',
-},
-  demoText: {
-    fontSize: '0.95rem',
-    color: '#191919',
-    lineHeight: '1.6',
-    margin: 0,
-  },
-};
 
 export default LoginPage;
