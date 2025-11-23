@@ -400,7 +400,7 @@ function HomePage() {
               <ul className="footer__links">
                 <li><Link to="/login">Войти</Link></li>
                 <li><Link to="/register">Регистрация</Link></li>
-                <li><Link to="/admin">Админка</Link></li>
+                <li><Link to="/admin">Админ</Link></li>
               </ul>
             </nav>
             <nav className="footer__col" aria-label="Контакты">

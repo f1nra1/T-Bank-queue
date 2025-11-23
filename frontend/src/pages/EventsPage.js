@@ -57,7 +57,7 @@ function EventsPage() {
             {currentUser ? (
               <>
                 <Link to="/my-queues" className="events-nav-link">Мои очереди</Link>
-                <Link to="/admin" className="events-nav-link">Админка</Link>
+                <Link to="/admin" className="events-nav-link">Админ</Link>
                 <Button
                   variant="outline"
                   size="small"
