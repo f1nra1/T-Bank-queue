@@ -35,11 +35,13 @@ const authRoutes = require('./routes/authRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const queueRoutes = require('./routes/queueRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const supportRoutes = require('./routes/supportRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/queue', queueRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/support', supportRoutes);
 
 // Базовый маршрут
 app.get('/', (req, res) => {

@@ -63,6 +63,26 @@ db.serialize(() => {
     )
   `);
 
+  // Таблица сообщений поддержки (пользователь <-> админ)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS support_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      sender_id INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      is_admin_message INTEGER DEFAULT 0,
+      is_read INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  // Индексы для support_messages
+  db.run('CREATE INDEX IF NOT EXISTS idx_support_messages_user_id ON support_messages(user_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_support_messages_created_at ON support_messages(created_at)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_support_messages_is_read ON support_messages(is_read)');
+
   console.log('✅ База данных инициализирована');
 });
 
